@@ -5,6 +5,7 @@ const DEFAULT_QUESTION_COUNT = 5;
 const MAX_QUESTION_COUNT = 10;
 const DEFAULT_SETTINGS = {
   autoResetEnabled: true,
+  includePro: false,
   problemList: DEFAULT_PROBLEM_LIST
 };
 
@@ -22,6 +23,8 @@ const elements = {
   questionCountHint: document.getElementById("question-count-hint"),
   statusMessage: document.getElementById("status-message"),
   autoResetEnabled: document.getElementById("auto-reset-enabled"),
+  includePro: document.getElementById("include-pro"),
+  includeProOption: document.getElementById("include-pro-option"),
   startButton: document.getElementById("generate-button")
 };
 
@@ -75,6 +78,15 @@ function bindEvents() {
     updateQuestionCountOptions();
   });
 
+  elements.includePro.addEventListener("change", async () => {
+    state.settings.includePro = elements.includePro.checked;
+    await chrome.storage.local.set({
+      [SETTINGS_STORAGE_KEY]: state.settings
+    });
+    populateTopicOptions();
+    updateQuestionCountOptions();
+  });
+
   elements.autoResetEnabled.addEventListener("change", async () => {
     state.settings.autoResetEnabled = elements.autoResetEnabled.checked;
     await chrome.storage.local.set({
@@ -116,6 +128,7 @@ function populateProblemListOptions() {
 function hydrateSettingsForm() {
   elements.autoResetEnabled.checked = state.settings.autoResetEnabled;
   elements.problemListSelect.value = state.settings.problemList;
+  elements.includePro.checked = state.settings.includePro;
 }
 
 function getTopicInputs() {
@@ -136,7 +149,19 @@ function syncAllTopicsCheckbox() {
 // Rebuilds the topic checkboxes for the selected list. Topics that were already
 // shown keep their state; new ones follow "All topics".
 function populateTopicOptions() {
-  const pool = getProblemsForList(state.problems, elements.problemListSelect.value);
+  const problemList = elements.problemListSelect.value;
+  // The Pro checkbox only shows for lists that contain Pro problems.
+  elements.includeProOption.hidden = !getProblemsForList(
+    state.problems,
+    problemList,
+    true
+  ).some((problem) => problem.pro);
+
+  const pool = getProblemsForList(
+    state.problems,
+    problemList,
+    elements.includePro.checked
+  );
   const topics = Array.from(
     new Set(pool.flatMap((problem) => problem.topics))
   ).sort((a, b) => a.localeCompare(b));
@@ -173,7 +198,8 @@ function getFilters() {
     difficulties: formData.getAll("difficulty"),
     // Empty means all topics, so a later list switch can't pin stale names.
     topics: elements.allTopics.checked ? [] : formData.getAll("topic"),
-    problemList: formData.get("problemList") || DEFAULT_PROBLEM_LIST
+    problemList: formData.get("problemList") || DEFAULT_PROBLEM_LIST,
+    includePro: elements.includePro.checked
   };
 }
 

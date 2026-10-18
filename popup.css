@@ -250,7 +250,11 @@ select option {
   float: left;
 }
 
-.topic-all {
+.inline-check[hidden] {
+  display: none;
+}
+
+.inline-check {
   display: flex;
   margin: 0;
   align-items: center;
@@ -277,7 +281,7 @@ select option {
 }
 
 .topic-grid .checkbox-option input,
-.topic-all input {
+.inline-check input {
   width: 13px;
   height: 13px;
 }
@@ -301,7 +305,15 @@ select option {
 }
 
 .setup-hint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin: 8px 0 0;
+}
+
+.setup-hint .field-note {
+  margin: 0;
 }
 
 .field-note {
@@ -312,7 +324,7 @@ select option {
 }
 
 .checkbox-option input,
-.topic-all input,
+.inline-check input,
 .toggle-option input {
   width: 16px;
   height: 16px;
