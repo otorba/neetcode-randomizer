@@ -827,7 +827,7 @@ function getCelebrationStyles() {
     .backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(2, 6, 23, .72);
+      background: rgba(19, 24, 28, .72);
       backdrop-filter: blur(4px);
     }
     .card {
@@ -841,10 +841,10 @@ function getCelebrationStyles() {
       flex-direction: column;
       gap: 16px;
       padding: 24px;
-      border: 1px solid rgba(148, 163, 184, .24);
+      border: 1px solid rgba(255, 255, 255, .16);
       border-radius: 20px;
-      background: linear-gradient(180deg, rgba(15, 23, 42, .98), rgba(15, 23, 42, .94));
-      color: #f8fafc;
+      background: linear-gradient(180deg, rgba(32, 34, 37, .98), rgba(32, 34, 37, .94));
+      color: #f4f4f4;
       font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       box-shadow: 0 24px 80px rgba(0, 0, 0, .45);
       overflow: hidden;
@@ -857,20 +857,20 @@ function getCelebrationStyles() {
       height: 32px;
       border: 0;
       border-radius: 999px;
-      background: rgba(148, 163, 184, .14);
-      color: #cbd5e1;
+      background: rgba(255, 255, 255, .09);
+      color: #d4d4d4;
       font-size: 22px;
       line-height: 1;
       cursor: pointer;
     }
-    .close:hover { background: rgba(148, 163, 184, .24); }
+    .close:hover { background: rgba(255, 255, 255, .16); }
     .eyebrow {
       margin: 0;
       font-size: 11px;
       font-weight: 700;
       letter-spacing: .12em;
       text-transform: uppercase;
-      color: #a5b4fc;
+      color: #a3b3ff;
     }
     h2 {
       margin: 0;
@@ -880,7 +880,7 @@ function getCelebrationStyles() {
     }
     .subtitle {
       margin: 0;
-      color: #94a3b8;
+      color: #a3a3a3;
       font-size: 14px;
     }
     .stats-grid {
@@ -891,8 +891,8 @@ function getCelebrationStyles() {
     .stat {
       padding: 14px 16px;
       border-radius: 14px;
-      background: rgba(30, 41, 59, .72);
-      border: 1px solid rgba(148, 163, 184, .16);
+      background: rgba(47, 49, 54, .72);
+      border: 1px solid rgba(255, 255, 255, .11);
     }
     .stat .label {
       display: block;
@@ -901,12 +901,12 @@ function getCelebrationStyles() {
       font-weight: 600;
       letter-spacing: .06em;
       text-transform: uppercase;
-      color: #94a3b8;
+      color: #a3a3a3;
     }
     .stat strong {
       font-size: 24px;
       font-weight: 700;
-      color: #e2e8f0;
+      color: #e5e5e5;
       font-variant-numeric: tabular-nums;
     }
     .list-wrap {
@@ -922,7 +922,7 @@ function getCelebrationStyles() {
       font-weight: 700;
       letter-spacing: .08em;
       text-transform: uppercase;
-      color: #94a3b8;
+      color: #a3a3a3;
     }
     .question-list {
       margin: 0;
@@ -941,13 +941,13 @@ function getCelebrationStyles() {
       gap: 10px;
       padding: 10px 12px;
       border-radius: 12px;
-      background: rgba(30, 41, 59, .55);
-      border: 1px solid rgba(148, 163, 184, .12);
+      background: rgba(47, 49, 54, .55);
+      border: 1px solid rgba(255, 255, 255, .08);
     }
     .question-row .index {
       font-size: 12px;
       font-weight: 700;
-      color: #64748b;
+      color: #737373;
       font-variant-numeric: tabular-nums;
     }
     .question-info {
@@ -965,7 +965,7 @@ function getCelebrationStyles() {
     }
     .question-info .meta {
       font-size: 12px;
-      color: #94a3b8;
+      color: #a3a3a3;
     }
     .outcome-badge {
       padding: 4px 8px;
@@ -977,25 +977,25 @@ function getCelebrationStyles() {
       white-space: nowrap;
     }
     .question-row.completed .outcome-badge {
-      background: rgba(34, 197, 94, .16);
+      background: rgba(72, 199, 142, .16);
       color: #4ade80;
     }
     .question-row.skipped .outcome-badge {
-      background: rgba(251, 191, 36, .14);
-      color: #fbbf24;
+      background: rgba(245, 166, 35, .14);
+      color: #f5a623;
     }
     .time {
       font-size: 14px;
       font-weight: 700;
-      color: #e2e8f0;
+      color: #e5e5e5;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
     .empty {
       padding: 16px;
       border-radius: 12px;
-      background: rgba(30, 41, 59, .55);
-      color: #94a3b8;
+      background: rgba(47, 49, 54, .55);
+      color: #a3a3a3;
       font-size: 14px;
       text-align: center;
     }
@@ -1005,17 +1005,17 @@ function getCelebrationStyles() {
       padding: 12px 16px;
       border: 0;
       border-radius: 12px;
-      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      background: linear-gradient(135deg, #615fff, #4f39f6);
       color: #fff;
       font-size: 14px;
       font-weight: 700;
       cursor: pointer;
       transition: transform .15s ease, box-shadow .15s ease;
-      box-shadow: 0 10px 24px rgba(79, 70, 229, .28);
+      box-shadow: 0 10px 24px rgba(97, 95, 255, .28);
     }
     .end-button:hover {
       transform: translateY(-1px);
-      box-shadow: 0 14px 28px rgba(79, 70, 229, .34);
+      box-shadow: 0 14px 28px rgba(97, 95, 255, .34);
     }
   `;
 }
@@ -1325,20 +1325,20 @@ function getSidebarStyles() {
       width: 38px;
       margin-top: 88px;
       padding: 12px 6px;
-      border: 1px solid rgba(148, 163, 184, .22);
+      border: 1px solid rgba(255, 255, 255, .15);
       border-right: 0;
       border-radius: 14px 0 0 14px;
-      background: rgba(15, 23, 42, .96);
-      color: #f8fafc;
+      background: rgba(32, 34, 37, .96);
+      color: #f4f4f4;
       box-shadow: -8px 0 24px rgba(0, 0, 0, .22);
       cursor: pointer;
       transition: background-color .15s ease, transform .15s ease;
     }
-    .toggle-tab:hover { background: rgba(30, 41, 59, .98); }
+    .toggle-tab:hover { background: rgba(47, 49, 54, .98); }
     .chevron {
       font-size: 18px;
       line-height: 1;
-      color: #a5b4fc;
+      color: #a3b3ff;
       font-weight: 700;
     }
     .tab-label {
@@ -1347,12 +1347,12 @@ function getSidebarStyles() {
       font-size: 10px;
       font-weight: 800;
       letter-spacing: .12em;
-      color: #818cf8;
+      color: #7c86ff;
     }
     .tab-progress {
       font-size: 11px;
       font-weight: 700;
-      color: #cbd5e1;
+      color: #d4d4d4;
       font-variant-numeric: tabular-nums;
     }
     .panel {
@@ -1360,9 +1360,9 @@ function getSidebarStyles() {
       height: 100vh;
       overflow-y: auto;
       padding: 18px 16px 24px;
-      border-left: 1px solid rgba(148, 163, 184, .18);
-      background: rgba(15, 23, 42, .96);
-      color: #f8fafc;
+      border-left: 1px solid rgba(255, 255, 255, .12);
+      background: rgba(32, 34, 37, .96);
+      color: #f4f4f4;
       box-shadow: -12px 0 40px rgba(0, 0, 0, .28);
       backdrop-filter: blur(18px);
       font-size: 13px;
@@ -1389,7 +1389,7 @@ function getSidebarStyles() {
     .header { justify-content: space-between; gap: 12px; }
     .eyebrow {
       margin: 0 0 2px;
-      color: #818cf8;
+      color: #7c86ff;
       font-size: 10px;
       font-weight: 800;
       letter-spacing: .1em;
@@ -1400,25 +1400,25 @@ function getSidebarStyles() {
       flex: 0 0 auto;
       padding: 5px 8px;
       border-radius: 999px;
-      background: rgba(148, 163, 184, .12);
-      color: #cbd5e1;
+      background: rgba(255, 255, 255, .08);
+      color: #d4d4d4;
       font-size: 10px;
       font-weight: 700;
     }
-    .state.accepted { background: rgba(34, 197, 94, .16); color: #86efac; }
+    .state.accepted { background: rgba(72, 199, 142, .16); color: #4ade80; }
     .timers {
       justify-content: space-between;
       gap: 8px;
       margin-top: 16px;
       padding: 10px 12px;
-      border: 1px solid rgba(148, 163, 184, .12);
+      border: 1px solid rgba(255, 255, 255, .08);
       border-radius: 12px;
       background: rgba(255, 255, 255, .04);
     }
     .timer { flex: 1; }
     .timer-label {
       display: block;
-      color: #94a3b8;
+      color: #a3a3a3;
       font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
@@ -1433,7 +1433,7 @@ function getSidebarStyles() {
     .progress-row {
       justify-content: space-between;
       margin-top: 14px;
-      color: #94a3b8;
+      color: #a3a3a3;
       font-size: 11px;
     }
     .progress-track {
@@ -1441,49 +1441,49 @@ function getSidebarStyles() {
       margin-top: 7px;
       overflow: hidden;
       border-radius: 999px;
-      background: rgba(148, 163, 184, .14);
+      background: rgba(255, 255, 255, .09);
     }
     .progress-track span {
       display: block;
       height: 100%;
       border-radius: inherit;
-      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      background: linear-gradient(90deg, #615fff, #7c86ff);
       transition: width .25s ease;
     }
     .problem {
       margin-top: 14px;
       padding: 12px;
-      border: 1px solid rgba(148, 163, 184, .12);
+      border: 1px solid rgba(255, 255, 255, .08);
       border-radius: 12px;
       background: rgba(255, 255, 255, .04);
     }
     .problem .label {
       margin: 0 0 3px;
-      color: #94a3b8;
+      color: #a3a3a3;
       font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
     }
     .problem strong { display: block; font-size: 14px; }
-    .problem span { display: block; margin-top: 3px; color: #94a3b8; font-size: 11px; }
+    .problem span { display: block; margin-top: 3px; color: #a3a3a3; font-size: 11px; }
     .stats {
       justify-content: space-around;
       margin-top: 12px;
       padding: 10px 0;
-      border-top: 1px solid rgba(148, 163, 184, .1);
-      border-bottom: 1px solid rgba(148, 163, 184, .1);
+      border-top: 1px solid rgba(255, 255, 255, .07);
+      border-bottom: 1px solid rgba(255, 255, 255, .07);
     }
-    .stats span { color: #94a3b8; font-size: 10px; text-align: center; }
-    .stats strong { display: block; color: #f8fafc; font-size: 15px; }
+    .stats span { color: #a3a3a3; font-size: 10px; text-align: center; }
+    .stats strong { display: block; color: #f4f4f4; font-size: 15px; }
     .notice {
       margin: 10px 0 0;
       padding: 8px 10px;
       border-radius: 9px;
-      background: rgba(99, 102, 241, .12);
-      color: #c7d2fe;
+      background: rgba(97, 95, 255, .12);
+      color: #a3b3ff;
       font-size: 11px;
     }
-    .notice.success { background: rgba(34, 197, 94, .12); color: #86efac; }
+    .notice.success { background: rgba(72, 199, 142, .12); color: #4ade80; }
     .primary-actions { gap: 8px; margin-top: 12px; }
     .button {
       flex: 1;
@@ -1495,7 +1495,7 @@ function getSidebarStyles() {
       font-weight: 700;
       cursor: pointer;
     }
-    .next { background: linear-gradient(135deg, #6366f1, #7c3aed); }
+    .next { background: linear-gradient(135deg, #615fff, #4f39f6); }
     .skip { background: rgba(255, 255, 255, .09); }
     .button:disabled, .text-button:disabled { opacity: .38; cursor: not-allowed; }
     .secondary-actions { justify-content: space-between; margin-top: 10px; }
@@ -1503,16 +1503,16 @@ function getSidebarStyles() {
       border: 0;
       padding: 4px;
       background: transparent;
-      color: #a5b4fc;
+      color: #a3b3ff;
       font: inherit;
       font-size: 11px;
       font-weight: 600;
       cursor: pointer;
     }
-    .text-button.danger { color: #fca5a5; }
+    .text-button.danger { color: #f87171; }
     .shortcut-hint {
       margin: 10px 0 0;
-      color: #64748b;
+      color: #737373;
       font-size: 10px;
       text-align: center;
     }
@@ -1529,10 +1529,10 @@ function getAcceptedPromptStyles() {
       gap: 14px;
       min-width: 260px;
       padding: 12px 12px 12px 14px;
-      border: 1px solid rgba(34, 197, 94, .25);
+      border: 1px solid rgba(72, 199, 142, .25);
       border-radius: 16px;
-      background: rgba(15, 23, 42, .96);
-      color: #f8fafc;
+      background: rgba(32, 34, 37, .96);
+      color: #f4f4f4;
       box-shadow: 0 18px 45px rgba(0, 0, 0, .35);
       backdrop-filter: blur(18px);
       font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -1545,12 +1545,12 @@ function getAcceptedPromptStyles() {
       gap: 2px;
     }
     strong {
-      color: #86efac;
+      color: #4ade80;
       font-size: 14px;
       line-height: 1.2;
     }
     span {
-      color: #cbd5e1;
+      color: #d4d4d4;
       font-size: 12px;
       line-height: 1.3;
     }
@@ -1559,7 +1559,7 @@ function getAcceptedPromptStyles() {
       border: 0;
       border-radius: 10px;
       padding: 0 14px;
-      background: linear-gradient(135deg, #22c55e, #16a34a);
+      background: linear-gradient(135deg, #48c78e, #3ab07c);
       color: #ffffff;
       font: inherit;
       font-size: 13px;
@@ -1584,10 +1584,10 @@ function getHeaderTimerStyles() {
       align-items: center;
       gap: 10px;
       padding: 6px 12px;
-      border: 1px solid rgba(148, 163, 184, .2);
+      border: 1px solid rgba(255, 255, 255, .13);
       border-radius: 999px;
-      background: rgba(15, 23, 42, .92);
-      color: #f8fafc;
+      background: rgba(32, 34, 37, .92);
+      color: #f4f4f4;
       box-shadow: 0 8px 24px rgba(0, 0, 0, .22);
       backdrop-filter: blur(14px);
       font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -1596,7 +1596,7 @@ function getHeaderTimerStyles() {
       white-space: nowrap;
     }
     .progress {
-      color: #a5b4fc;
+      color: #a3b3ff;
       font-size: 11px;
       font-weight: 800;
       font-variant-numeric: tabular-nums;
@@ -1604,7 +1604,7 @@ function getHeaderTimerStyles() {
     .divider {
       width: 1px;
       height: 14px;
-      background: rgba(148, 163, 184, .24);
+      background: rgba(255, 255, 255, .16);
     }
     .timer {
       display: inline-flex;
@@ -1612,14 +1612,14 @@ function getHeaderTimerStyles() {
       gap: 6px;
     }
     .label {
-      color: #94a3b8;
+      color: #a3a3a3;
       font-size: 10px;
       font-weight: 700;
       letter-spacing: .04em;
       text-transform: uppercase;
     }
     strong {
-      color: #f8fafc;
+      color: #f4f4f4;
       font-size: 13px;
       font-weight: 800;
       font-variant-numeric: tabular-nums;

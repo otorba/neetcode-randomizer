@@ -1,37 +1,38 @@
 :root {
-  color-scheme: light;
-  --bg: #f3f5f9;
+  /* NeetCode dark theme (neetcode.io .dark-theme) */
+  color-scheme: dark;
+  --bg: #202225;
   --bg-accent: radial-gradient(
     120% 80% at 0% 0%,
-    rgba(79, 70, 229, 0.1) 0%,
+    rgba(97, 95, 255, 0.12) 0%,
     transparent 55%
   );
-  --panel: rgba(255, 255, 255, 0.92);
-  --panel-solid: #ffffff;
-  --panel-border: rgba(15, 23, 42, 0.08);
-  --text: #0f172a;
-  --muted: #64748b;
-  --accent: #4f46e5;
-  --accent-hover: #4338ca;
-  --accent-soft: rgba(79, 70, 229, 0.1);
-  --accent-ring: rgba(79, 70, 229, 0.22);
-  --secondary-bg: #f8fafc;
-  --secondary-border: rgba(15, 23, 42, 0.1);
-  --secondary-text: #334155;
-  --input-bg: #ffffff;
-  --input-hover: #f8fafc;
-  --chip-bg: #eef2ff;
-  --chip-text: #4338ca;
-  --card-bg: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  --empty-bg: #f8fafc;
-  --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --easy: #15803d;
-  --easy-bg: #dcfce7;
-  --medium: #b45309;
-  --medium-bg: #ffedd5;
-  --hard: #b91c1c;
-  --hard-bg: #fee2e2;
+  --panel: #2f3136;
+  --panel-solid: #2f3136;
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --text: #f4f4f4;
+  --muted: #a3a3a3;
+  --accent: #615fff;
+  --accent-hover: #7c86ff;
+  --accent-soft: rgba(97, 95, 255, 0.15);
+  --accent-ring: rgba(97, 95, 255, 0.35);
+  --secondary-bg: #26282c;
+  --secondary-border: rgba(255, 255, 255, 0.15);
+  --secondary-text: #d4d4d4;
+  --input-bg: #26282c;
+  --input-hover: #36383d;
+  --chip-bg: rgba(97, 95, 255, 0.15);
+  --chip-text: #a3b3ff;
+  --card-bg: linear-gradient(180deg, #2f3136 0%, #2a2c30 100%);
+  --empty-bg: #26282c;
+  --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.25);
+  --easy: rgb(72, 199, 142);
+  --easy-bg: rgba(72, 199, 142, 0.15);
+  --medium: rgb(245, 166, 35);
+  --medium-bg: rgba(245, 166, 35, 0.15);
+  --hard: rgb(248, 113, 113);
+  --hard-bg: rgba(248, 113, 113, 0.15);
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 18px;
@@ -41,48 +42,6 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --bg: #0b0f17;
-    --bg-accent: radial-gradient(
-      120% 80% at 0% 0%,
-      rgba(99, 102, 241, 0.18) 0%,
-      transparent 55%
-    );
-    --panel: rgba(18, 24, 38, 0.88);
-    --panel-solid: #121826;
-    --panel-border: rgba(148, 163, 184, 0.12);
-    --text: #f8fafc;
-    --muted: #94a3b8;
-    --accent: #818cf8;
-    --accent-hover: #a5b4fc;
-    --accent-soft: rgba(129, 140, 248, 0.14);
-    --accent-ring: rgba(129, 140, 248, 0.28);
-    --secondary-bg: rgba(255, 255, 255, 0.04);
-    --secondary-border: rgba(148, 163, 184, 0.14);
-    --secondary-text: #e2e8f0;
-    --input-bg: rgba(255, 255, 255, 0.04);
-    --input-hover: rgba(255, 255, 255, 0.06);
-    --chip-bg: rgba(129, 140, 248, 0.14);
-    --chip-text: #c7d2fe;
-    --card-bg: linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.04) 0%,
-      rgba(255, 255, 255, 0.02) 100%
-    );
-    --empty-bg: rgba(255, 255, 255, 0.03);
-    --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
-    --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.25);
-    --easy: #4ade80;
-    --easy-bg: rgba(34, 197, 94, 0.14);
-    --medium: #fbbf24;
-    --medium-bg: rgba(245, 158, 11, 0.14);
-    --hard: #f87171;
-    --hard-bg: rgba(239, 68, 68, 0.14);
-  }
 }
 
 * {
@@ -122,9 +81,9 @@ body {
   height: 44px;
   flex-shrink: 0;
   border-radius: 14px;
-  background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%);
+  background: var(--accent);
   color: #ffffff;
-  box-shadow: 0 10px 24px rgba(79, 70, 229, 0.28);
+  box-shadow: 0 10px 24px rgba(97, 95, 255, 0.28);
 }
 
 .brand-mark svg {
@@ -201,12 +160,13 @@ legend {
 select {
   width: 100%;
   appearance: none;
+  color-scheme: dark;
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-sm);
   padding: 11px 38px 11px 12px;
   background:
     var(--input-bg)
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a3a3a3' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
     no-repeat right 12px center;
   color: var(--text);
   font-size: 0.9rem;
@@ -229,16 +189,6 @@ select:focus-visible {
 select option {
   background-color: var(--panel-solid);
   color: var(--text);
-}
-
-@media (prefers-color-scheme: dark) {
-  select {
-    color-scheme: dark;
-    background:
-      var(--input-bg)
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
-      no-repeat right 12px center;
-  }
 }
 
 .checkbox-grid {
@@ -292,9 +242,9 @@ select option {
 }
 
 .checkbox-option:has(input:checked) {
-  border-color: rgba(79, 70, 229, 0.35);
+  border-color: rgba(97, 95, 255, 0.35);
   background: var(--accent-soft);
-  box-shadow: inset 0 0 0 1px rgba(79, 70, 229, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(97, 95, 255, 0.08);
 }
 
 .checkbox-option-wide {
@@ -357,7 +307,7 @@ select option {
 }
 
 .toggle-option:has(input:checked) {
-  border-color: rgba(79, 70, 229, 0.28);
+  border-color: rgba(97, 95, 255, 0.28);
   background: var(--accent-soft);
 }
 
@@ -419,13 +369,13 @@ select option {
 
 .primary {
   width: 100%;
-  background: linear-gradient(135deg, var(--accent) 0%, #6d28d9 100%);
+  background: var(--accent);
   color: #ffffff;
-  box-shadow: 0 10px 20px rgba(79, 70, 229, 0.22);
+  box-shadow: 0 10px 20px rgba(97, 95, 255, 0.22);
 }
 
 .primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--accent-hover) 0%, #5b21b6 100%);
+  background: var(--accent-hover);
 }
 
 .secondary {

@@ -15,6 +15,7 @@ extension (MIT) to NeetCode.
 - Session and problem timers in the problem navbar.
 - Optional auto-reset of the editor to the starter code when a queued problem opens.
 - Summary screen with time per question when the queue is finished.
+- Dark theme matching the neetcode.io palette.
 
 ## Install
 
