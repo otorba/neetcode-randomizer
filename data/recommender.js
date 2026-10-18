@@ -25,6 +25,10 @@ const ATTEMPT_DECAY = 0.85;
 // moves it one interval further, and past the last one it never returns.
 const REVIEW_INTERVALS_DAYS = [1, 4, 14];
 const STRONG_ATTEMPT_SCORE = 0.7;
+// Mastery credit cap for attempts in a single-topic session: the topic was known up
+// front, so solving says nothing about recognizing it. The review schedule ignores
+// the cap, otherwise every drilled problem would come back.
+const KNOWN_TOPIC_MAX_SCORE = 0.6;
 const TARGET_MINUTES = { Easy: 15, Medium: 25, Hard: 40 };
 // Difficulty mix within the picked topic, by that topic's mastery.
 const DIFFICULTY_MIX = [
@@ -85,7 +89,10 @@ function getTopicStats(history) {
       stats.set(attempt.topic, topic);
     }
 
-    const score = scoreAttempt(attempt);
+    const score =
+      attempt.guess === null
+        ? Math.min(scoreAttempt(attempt), KNOWN_TOPIC_MAX_SCORE)
+        : scoreAttempt(attempt);
     topic.alpha += score * topic.weight;
     topic.beta += (1 - score) * topic.weight;
     topic.weight *= ATTEMPT_DECAY;

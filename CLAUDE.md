@@ -45,6 +45,8 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
 - Avoid hard rules in picking (never-repeat, fixed rotations): they make the next topic deducible.
   Keep the soft recency penalty, the 3x need cap and the random share.
 - Cleanly solved problems never come back; only weak attempts are rescheduled.
+- Single-topic sessions ask no guess, so their attempts get at most 0.6 mastery credit
+  (`KNOWN_TOPIC_MAX_SCORE`); the review schedule scores them uncapped.
 
 ## Problem data
 
