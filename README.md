@@ -1,13 +1,14 @@
 # NeetCode Randomizer
 
-A Chrome extension that builds a hidden, randomized practice queue from NeetCode 150 or Blind 75 and
+A Chrome extension that builds a hidden, randomized practice queue from a NeetCode list and
 opens the problems on [neetcode.io](https://neetcode.io), one at a time. It is a port of the
 [LeetCode Randomizer](https://chromewebstore.google.com/detail/leetcode-randomizer/kpcfdadongbobogdkojpflldijmhllln)
 extension (MIT) to NeetCode.
 
 ## Features
 
-- Pick a list (NeetCode 150 or Blind 75), a session size (1-10), a topic and difficulties.
+- Pick a list (Blind 75, NeetCode 150, NeetCode 250 or all free NeetCode problems), a session size
+  (1-10), any combination of topics and difficulties.
 - Problems open on `neetcode.io/problems/<slug>`. Next unlocks only after an accepted **Submit**
   (a passing Run does not count).
 - In-page session sidebar (`Alt+Shift+H` to expand/collapse): session and problem timers, progress,
@@ -25,6 +26,5 @@ extension (MIT) to NeetCode.
 
 ## Problem data
 
-`data/problems.json` and `data/blind75-slugs.json` are generated from the problem list embedded in
-the neetcode.io bundle, so the slugs are NeetCode's own (for example Contains Duplicate is
+`data/problems.json` is generated from the problem list embedded in the neetcode.io bundle, so the slugs are NeetCode's own (for example Contains Duplicate is
 `duplicate-integer`). To refresh them, see the usage comment in `scripts/build-problems.mjs`.

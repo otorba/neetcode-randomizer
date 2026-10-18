@@ -1,5 +1,4 @@
 const DATA_PATH = "data/problems.json";
-const BLIND75_SLUGS_PATH = "data/blind75-slugs.json";
 const SESSION_STORAGE_KEY = "activeSession";
 const SETTINGS_STORAGE_KEY = "settings";
 const DEFAULT_QUESTION_COUNT = 5;
@@ -11,7 +10,6 @@ const DEFAULT_SETTINGS = {
 
 const state = {
   problems: [],
-  blind75Slugs: [],
   settings: { ...DEFAULT_SETTINGS }
 };
 
@@ -32,7 +30,6 @@ async function init() {
 
   try {
     state.problems = await loadProblems();
-    state.blind75Slugs = await loadBlind75Slugs();
     await loadStoredSettings();
     hydrateSettingsForm();
     populateTopicOptions();
@@ -75,15 +72,6 @@ function bindEvents() {
   });
 }
 
-async function loadBlind75Slugs() {
-  const response = await fetch(chrome.runtime.getURL(BLIND75_SLUGS_PATH));
-  if (!response.ok) {
-    throw new Error(`Failed to load blind75-slugs.json: ${response.status}`);
-  }
-
-  return response.json();
-}
-
 async function loadProblems() {
   const response = await fetch(chrome.runtime.getURL(DATA_PATH));
   if (!response.ok) {
@@ -100,10 +88,7 @@ async function loadStoredSettings() {
     ...(stored[SETTINGS_STORAGE_KEY] || {})
   };
 
-  if (
-    state.settings.problemList !== PROBLEM_LIST_NEETCODE_150 &&
-    state.settings.problemList !== PROBLEM_LIST_BLIND_75
-  ) {
+  if (!isKnownProblemList(state.settings.problemList)) {
     state.settings.problemList = DEFAULT_PROBLEM_LIST;
   }
 }
@@ -125,11 +110,7 @@ function getSelectedProblemList() {
 }
 
 function getActiveProblemPool() {
-  return getProblemsForList(
-    state.problems,
-    getSelectedProblemList(),
-    state.blind75Slugs
-  );
+  return getProblemsForList(state.problems, getSelectedProblemList());
 }
 
 function populateTopicOptions() {
@@ -168,28 +149,12 @@ function getFilters() {
   };
 }
 
-function filterProblems(filters) {
-  const pool = getProblemsForList(
-    state.problems,
-    filters.problemList,
-    state.blind75Slugs
-  );
-
-  return pool.filter((problem) => {
-    const matchesDifficulty = filters.difficulties.includes(problem.difficulty);
-    const matchesTopic =
-      !filters.topic || problem.topics.includes(filters.topic);
-
-    return matchesDifficulty && matchesTopic;
-  });
-}
-
 function getMatchingProblemCount(filters = getFilters()) {
   if (!filters.difficulties.length) {
     return 0;
   }
 
-  return filterProblems(filters).length;
+  return filterProblems(state.problems, filters).length;
 }
 
 function updateQuestionCountOptions() {
@@ -210,8 +175,7 @@ function updateQuestionCountOptions() {
   if (matchingCount === 0) {
     elements.questionCountSelect.disabled = true;
     elements.startButton.disabled = true;
-    const listLabel =
-      filters.problemList === PROBLEM_LIST_BLIND_75 ? "Blind 75" : "NeetCode 150";
+    const listLabel = getProblemListLabel(filters.problemList);
     elements.questionCountHint.textContent = filters.topic
       ? `No ${filters.topic} problems in ${listLabel} match the selected difficulties.`
       : `No problems in ${listLabel} match the selected difficulties.`;
@@ -247,16 +211,6 @@ function updateQuestionCountOptions() {
   }
 }
 
-function shuffle(problems) {
-  const copy = [...problems];
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [copy[index], copy[randomIndex]] = [copy[randomIndex], copy[index]];
-  }
-
-  return copy;
-}
-
 async function startSession() {
   const filters = getFilters();
 
@@ -265,7 +219,7 @@ async function startSession() {
     return;
   }
 
-  const matchingProblems = filterProblems(filters);
+  const matchingProblems = filterProblems(state.problems, filters);
   const queue = shuffle(matchingProblems).slice(0, filters.count);
 
   if (!queue.length) {

@@ -1,5 +1,6 @@
-// Builds data/problems.json and data/blind75-slugs.json from NeetCode's own
-// problem list, which ships inside the neetcode.io main bundle.
+// Builds data/problems.json from NeetCode's own problem list, which ships inside
+// the neetcode.io main bundle. Every problem with a NeetCode page is kept; `lists`
+// carries the bundle's list flags and `pro` marks NeetCode Pro problems.
 //
 // Usage:
 //   curl -sSL https://neetcode.io/practice | grep -o 'main\.[0-9a-f]*\.js'
@@ -11,6 +12,9 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+
+// Bundle flag -> expected size. Must match the list ids in data/problem-lists.js.
+const LIST_SIZES = { blind75: 75, neetcode150: 150, neetcode250: 250 };
 
 const bundlePath = process.argv[2];
 if (!bundlePath) {
@@ -34,18 +38,20 @@ function readFlag(entry, key) {
 }
 
 const problems = [];
-const blind75Slugs = [];
 const seen = new Set();
+const listCounts = Object.fromEntries(Object.keys(LIST_SIZES).map((id) => [id, 0]));
 
 for (const [entry] of bundle.matchAll(entryPattern)) {
-  if (!readFlag(entry, "neetcode150")) {
-    continue;
-  }
-
   const title = readString(entry, "problem");
+  const lists = Object.keys(LIST_SIZES).filter((id) => readFlag(entry, id));
   const slug = readString(entry, "ncLink")?.replace(/\/+$/, "");
+
+  // Entries without ncLink (the JavaScript set) have no NeetCode problem page.
   if (!slug) {
-    throw new Error(`NeetCode 150 entry without ncLink: ${title}`);
+    if (lists.length) {
+      throw new Error(`${lists.join("/")} entry without ncLink: ${title}`);
+    }
+    continue;
   }
 
   if (seen.has(slug)) {
@@ -53,32 +59,32 @@ for (const [entry] of bundle.matchAll(entryPattern)) {
   }
   seen.add(slug);
 
+  for (const id of lists) {
+    listCounts[id] += 1;
+  }
+
   problems.push({
     id: slug,
     title,
     slug,
     url: `https://neetcode.io/problems/${slug}`,
     difficulty: readString(entry, "difficulty"),
-    topics: [readString(entry, "pattern")]
+    topics: [readString(entry, "pattern")],
+    lists,
+    pro: readFlag(entry, "pro")
   });
+}
 
-  if (readFlag(entry, "blind75")) {
-    blind75Slugs.push(slug);
+for (const [id, expected] of Object.entries(LIST_SIZES)) {
+  if (listCounts[id] !== expected) {
+    throw new Error(`Expected ${expected} ${id} problems, found ${listCounts[id]}`);
   }
 }
 
-if (problems.length !== 150) {
-  throw new Error(`Expected 150 NeetCode 150 problems, found ${problems.length}`);
-}
-
-if (blind75Slugs.length !== 75) {
-  throw new Error(`Expected 75 Blind 75 problems, found ${blind75Slugs.length}`);
-}
-
 writeFileSync(join(dataDir, "problems.json"), `${JSON.stringify(problems, null, 2)}\n`);
-writeFileSync(
-  join(dataDir, "blind75-slugs.json"),
-  `${JSON.stringify(blind75Slugs.sort(), null, 2)}\n`
-);
 
-console.log(`Wrote ${problems.length} problems, ${blind75Slugs.length} Blind 75 slugs.`);
+const proCount = problems.filter((problem) => problem.pro).length;
+console.log(
+  `Wrote ${problems.length} problems (${proCount} Pro); ` +
+    Object.entries(listCounts).map(([id, count]) => `${id} ${count}`).join(", ")
+);

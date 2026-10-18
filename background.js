@@ -2,10 +2,8 @@ importScripts("data/problem-lists.js");
 
 const SESSION_STORAGE_KEY = "activeSession";
 const DATA_PATH = "data/problems.json";
-const BLIND75_SLUGS_PATH = "data/blind75-slugs.json";
 
 let cachedProblems = null;
-let cachedBlind75Slugs = null;
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const handlers = {
@@ -250,20 +248,7 @@ async function ensureProblemData() {
     cachedProblems = await loadProblems();
   }
 
-  if (!cachedBlind75Slugs) {
-    cachedBlind75Slugs = await loadBlind75Slugs();
-  }
-
   return cachedProblems;
-}
-
-async function loadBlind75Slugs() {
-  const response = await fetch(chrome.runtime.getURL(BLIND75_SLUGS_PATH));
-  if (!response.ok) {
-    throw new Error(`Failed to load blind75-slugs.json: ${response.status}`);
-  }
-
-  return response.json();
 }
 
 async function loadProblems() {
@@ -273,29 +258,6 @@ async function loadProblems() {
   }
 
   return response.json();
-}
-
-function filterProblems(problems, filters) {
-  const problemList = filters.problemList || DEFAULT_PROBLEM_LIST;
-  const pool = getProblemsForList(problems, problemList, cachedBlind75Slugs || []);
-
-  return pool.filter((problem) => {
-    const matchesDifficulty = filters.difficulties.includes(problem.difficulty);
-    const matchesTopic =
-      !filters.topic || problem.topics.includes(filters.topic);
-
-    return matchesDifficulty && matchesTopic;
-  });
-}
-
-function shuffle(problems) {
-  const copy = [...problems];
-  for (let index = copy.length - 1; index > 0; index -= 1) {
-    const randomIndex = Math.floor(Math.random() * (index + 1));
-    [copy[index], copy[randomIndex]] = [copy[randomIndex], copy[index]];
-  }
-
-  return copy;
 }
 
 function validateCurrentProblem(session, slug, sessionId) {

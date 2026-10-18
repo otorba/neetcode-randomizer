@@ -17,22 +17,30 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
   hooks are the constants at the top (`SUBMIT_BUTTON_SELECTOR`, `RESULT_SELECTOR`, `RESET_*`,
   `EDITOR_SELECTOR`) plus `getChangedSubmissionStatus`, `scheduleEditorReset`, `findResetConfirmButton`
   and `findPageHeaderAnchor`. Everything else is site-agnostic.
-- `data/problem-lists.js`: list ids and `getProblemsForList`, shared by popup and background
-  (`importScripts`). `filterProblems` and `shuffle` are duplicated in popup.js and background.js,
-  as in the original. Pull them into `problem-lists.js` rather than adding a third copy.
-- `data/problems.json` (150 entries) and `data/blind75-slugs.json` (75) are generated. Don't edit
-  them by hand.
+- `data/problem-lists.js`: the list registry (`PROBLEM_LISTS`), `getProblemsForList`,
+  `filterProblems` and `shuffle`, shared by popup and background (`importScripts`, so it stays a
+  classic script).
+- `data/problems.json` (1093 entries) is generated. Don't edit it by hand.
 
 ## Problem data
 
 - NeetCode slugs differ from LeetCode slugs (`contains-duplicate` -> `duplicate-integer`). Never
   derive a NeetCode URL from a LeetCode slug.
 - Source of truth is the problem list embedded in the neetcode.io `main.<hash>.js` bundle: flat
-  objects `{problem, pattern, link, difficulty, code, neetcode150:!0, blind75:!0, ncLink:"slug/"}`.
-  `scripts/build-problems.mjs <bundle>` parses it as text (never eval) and fails unless it finds
-  exactly 150 / 75. Usage is in the script header. Keep downloaded bundles in a `/tmp` dir, not in
+  objects `{problem, pattern, link, difficulty, code, neetcode150:!0, blind75:!0, neetcode250:!0,
+  pro:!0, ncLink:"slug/"}`. `scripts/build-problems.mjs <bundle>` parses it as text (never eval),
+  keeps every entry with an `ncLink` (the JavaScript set has none and no problem page), stores the
+  list flags in `lists` and the Pro flag in `pro`, and fails unless the lists hold exactly
+  75 / 150 / 250. Usage is in the script header. Keep downloaded bundles in a `/tmp` dir, not in
   the repo.
+- NeetCode's own list ids (bundle enum): `blind75`, `neetcode150`, `neetcode250`, `allNC`,
+  `coreSkills`, `systemDesign`. Core Skills and System Design are not judged problems. There is
+  also a `premiumAlgo100` flag (93 of 100 Pro), not offered.
+- "NeetCode All" (`allNC`) is the free problems only (791). A Pro problem opens a paywall for
+  non-subscribers and the session can't reach an accepted submit. 75 / 150 / 250 hold no Pro problems.
 - `topics` holds a single entry, NeetCode's `pattern` (18 values).
+- Session `filters.topics` is an array, empty means all. Sessions stored before multi-topic carry
+  `filters.topic` (a string); `filterProblems` reads both.
 
 ## NeetCode page facts (from the bundle, verify again when something breaks)
 
@@ -63,8 +71,7 @@ same palette.
 
 ## Verifying changes
 
-- `node --check` on every JS file. After a data rebuild, check the 150 / 75 counts and that every
-  Blind 75 slug exists in `problems.json`.
+- `node --check` on every JS file. A data rebuild asserts the 75 / 150 / 250 counts itself.
 - Visual check without loading the extension: copy the popup and content files to a `/tmp` dir, add a
   stub `window.chrome` (`storage.local.get/set/remove`, `storage.onChanged`, `runtime.getURL/sendMessage`)
   loaded before the scripts, serve with `python3 -m http.server`, and screenshot with
