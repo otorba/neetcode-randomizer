@@ -7,11 +7,23 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
 ## Where things live
 
 - `popup.html` / `popup.js` / `popup.css`: session setup (list, count 1-10, topic, difficulty, auto-reset).
-  Writes the `activeSession` and `settings` keys in `chrome.storage.local`.
+  Writes the `activeSession` and `settings` keys in `chrome.storage.local`. "All topics" starts an
+  adaptive session: the popup picks only the first problem.
+- `theme.css`: the palette variables, shared by `popup.css` and `progress.css`.
+- `progress.html` / `progress.js` / `progress.css`: per-pattern mastery, mix-ups, recent attempts,
+  export / import (merge) / clear of the history. Writes `attemptHistory` directly.
+- `ui-helpers.js`: `escapeHtml`, `formatElapsed`; loaded before `content.js` (manifest) and by the
+  progress page.
+- `data/recommender.js`: `scoreAttempt`, `getTopicStats` (per-topic Beta belief), `getReviewSchedule`,
+  `pickAdaptiveProblem`. Classic script shared by popup, background and progress page; the tuning
+  constants are at the top.
 - `background.js`: the session state machine. All session mutations go through its message handlers
-  (`OPEN_CURRENT_PROBLEM`, `NEETCODE_PROBLEM_ACCEPTED`, `ADVANCE_TO_NEXT_PROBLEM`, `SKIP_CURRENT_PROBLEM`,
+  (`OPEN_CURRENT_PROBLEM`, `NEETCODE_PROBLEM_ACCEPTED`, `NEETCODE_SUBMISSION_REJECTED`,
+  `NEETCODE_SOLUTION_VIEWED`, `RECORD_PATTERN_GUESS`, `ADVANCE_TO_NEXT_PROBLEM`, `SKIP_CURRENT_PROBLEM`,
   `TOGGLE_SESSION_PAUSE`, `REGENERATE_CURRENT_QUESTION`, `END_SESSION`). The content script never
-  writes the session directly.
+  writes the session directly. It also appends one attempt per finished or rerolled problem to
+  `attemptHistory`, and in adaptive sessions picks the next problem when it's reached
+  (`session.size` is the session length, `queue` only what was picked so far).
 - `content.js`: everything on the problem page. Shadow-DOM hosts for the sidebar, header timer,
   accepted prompt and summary screen, each with its own `get*Styles()` function. The NeetCode-specific
   hooks are the constants at the top (`SUBMIT_BUTTON_SELECTOR`, `RESULT_SELECTOR`, `RESET_*`,
@@ -21,6 +33,18 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
   `filterProblems` and `shuffle`, shared by popup and background (`importScripts`, so it stays a
   classic script).
 - `data/problems.json` (1093 entries) is generated. Don't edit it by hand.
+
+## Adaptive sessions
+
+- The goal is pattern recognition without knowing the topic, so nothing may show the topic of the
+  current problem before the guess: not the sidebar, not the prompt, and NeetCode's Topics
+  `<details>` stays hidden (`syncTopicsDisclosure`). The summary screen and the progress page are
+  fine.
+- `patternChoices` is every pattern for adaptive sessions (the options must not hint at the pool),
+  the selected topics otherwise, and empty for one topic (no guess asked). The first guess sticks.
+- Avoid hard rules in picking (never-repeat, fixed rotations): they make the next topic deducible.
+  Keep the soft recency penalty, the 3x need cap and the random share.
+- Cleanly solved problems never come back; only weak attempts are rescheduled.
 
 ## Problem data
 

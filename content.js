@@ -1320,19 +1320,6 @@ function getCurrentProblemPausedMs() {
   return activeSession?.currentProblemPausedMs || 0;
 }
 
-function formatElapsed(milliseconds) {
-  const totalSeconds = Math.floor(milliseconds / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  if (hours > 0) {
-    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-  }
-
-  return `${minutes}:${String(seconds).padStart(2, "0")}`;
-}
-
 async function handleSidebarAction(action) {
   if (!activeSession || actionPending) {
     return;
@@ -1981,13 +1968,4 @@ function waitForElement(find, expectedSlug, timeoutMs) {
       attributeFilter: ["class"]
     });
   });
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
 }

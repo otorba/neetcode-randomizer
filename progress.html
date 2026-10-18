@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NeetCode Randomizer · Progress</title>
+    <link rel="stylesheet" href="theme.css" />
+    <link rel="stylesheet" href="progress.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">NeetCode Randomizer</p>
+          <h1>Progress</h1>
+        </div>
+        <div class="data-actions">
+          <button type="button" class="button" id="export-button">Export</button>
+          <label class="button" for="import-input">Import</label>
+          <input type="file" id="import-input" accept="application/json,.json" hidden />
+          <button type="button" class="button danger" id="clear-button">Clear history</button>
+        </div>
+      </header>
+      <p id="status-message" class="status" aria-live="polite"></p>
+
+      <section class="summary" id="summary"></section>
+
+      <section class="card">
+        <h2>Patterns</h2>
+        <p class="note">
+          Mastery blends solving, naming the pattern, wrong submits, time and the solution
+          tab, newest attempts first. Weak patterns come up more often, never on a fixed
+          schedule.
+        </p>
+        <table class="topics">
+          <thead>
+            <tr>
+              <th>Pattern</th>
+              <th class="mastery-col">Mastery</th>
+              <th>Attempts</th>
+              <th>Solved</th>
+              <th>Named</th>
+              <th>Last</th>
+            </tr>
+          </thead>
+          <tbody id="topic-rows"></tbody>
+        </table>
+      </section>
+
+      <div class="columns">
+        <section class="card">
+          <h2>Mix-ups</h2>
+          <p class="note">What you named, and what it was.</p>
+          <ul class="mixups" id="mixup-list"></ul>
+        </section>
+
+        <section class="card">
+          <h2>Recent attempts</h2>
+          <ol class="attempts" id="attempt-list"></ol>
+        </section>
+      </div>
+    </main>
+
+    <script src="data/problem-lists.js"></script>
+    <script src="data/recommender.js"></script>
+    <script src="ui-helpers.js"></script>
+    <script src="progress.js"></script>
+  </body>
+</html>

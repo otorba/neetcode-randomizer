@@ -10,6 +10,14 @@ extension (MIT) to NeetCode.
 - Pick a list (Blind 75, NeetCode 150, NeetCode 250, Premium 100 or NeetCode All), a session size
   (1-10), any combination of topics and difficulties. Pro problems (most of Premium 100, part of
   NeetCode All) are included only when "Include Pro" is checked.
+- With "All topics" the session is adaptive: each problem is picked when you reach it, from your
+  attempt history. Patterns you struggle with come up more often, failed problems come back after
+  1, 4 and 14 days, and a pattern that runs out of unseen problems borrows them from the next
+  larger list. A fifth of the picks stays plain random, so the next topic is never predictable.
+- The topic is never shown up front (NeetCode's own Topics block is hidden too). After Accepted
+  or Skip you name the pattern, then see what it was.
+- Progress page (popup -> Progress): mastery per pattern, mix-ups between patterns, recent
+  attempts, export / import / clear of the history.
 - Problems open on `neetcode.io/problems/<slug>`. Next unlocks only after an accepted **Submit**
   (a passing Run does not count).
 - In-page session sidebar (`Alt+Shift+H` to expand/collapse): session and problem timers, progress,
