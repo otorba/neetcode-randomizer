@@ -4,11 +4,12 @@ const PROBLEM_LIST_ALL = "allNC";
 const DEFAULT_PROBLEM_LIST = "neetcode150";
 
 // Ids match the list flags in problems.json `lists`, except "allNC", which is every
-// problem. Only "allNC" holds Pro problems.
+// problem. Only "premiumAlgo100" and "allNC" hold Pro problems.
 const PROBLEM_LISTS = [
   { id: "blind75", label: "Blind 75" },
   { id: "neetcode150", label: "NeetCode 150" },
   { id: "neetcode250", label: "NeetCode 250" },
+  { id: "premiumAlgo100", label: "Premium 100" },
   { id: PROBLEM_LIST_ALL, label: "NeetCode All" }
 ];
 

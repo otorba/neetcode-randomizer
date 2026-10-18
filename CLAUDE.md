@@ -27,19 +27,20 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
 - NeetCode slugs differ from LeetCode slugs (`contains-duplicate` -> `duplicate-integer`). Never
   derive a NeetCode URL from a LeetCode slug.
 - Source of truth is the problem list embedded in the neetcode.io `main.<hash>.js` bundle: flat
-  objects `{problem, pattern, link, difficulty, code, neetcode150:!0, blind75:!0, neetcode250:!0,
+  objects `{problem, pattern, link, difficulty, code, neetcode150:!0, blind75:!0, neetcode250:!0, premiumAlgo100:!0,
   pro:!0, ncLink:"slug/"}`. `scripts/build-problems.mjs <bundle>` parses it as text (never eval),
   keeps every entry with an `ncLink` (the JavaScript set has none and no problem page), stores the
   list flags in `lists` and the Pro flag in `pro`, and fails unless the lists hold exactly
-  75 / 150 / 250. Usage is in the script header. Keep downloaded bundles in a `/tmp` dir, not in
+  75 / 150 / 250 / 100. Usage is in the script header. Keep downloaded bundles in a `/tmp` dir, not in
   the repo.
 - NeetCode's own list ids (bundle enum): `blind75`, `neetcode150`, `neetcode250`, `allNC`,
   `coreSkills`, `systemDesign`. Core Skills and System Design are not judged problems. There is
-  also a `premiumAlgo100` flag (93 of 100 Pro), not offered.
-- "NeetCode All" (`allNC`) is 791 free + 302 Pro problems; 75 / 150 / 250 hold no Pro problems. Pro
-  is opt-in (`settings.includePro`, copied into session `filters.includePro`): without a
-  subscription a Pro problem opens a paywall and the session can't reach an accepted submit. The
-  popup shows the "Include Pro" box only for lists that contain Pro problems.
+  also a `premiumAlgo100` flag (93 of 100 Pro), offered as "Premium 100".
+- "NeetCode All" (`allNC`) is 791 free + 302 Pro problems; 75 / 150 / 250 hold no Pro problems,
+  Premium 100 holds 93. Pro is opt-in (`settings.includePro`, copied into session
+  `filters.includePro`): without a subscription a Pro problem opens a paywall and the session
+  can't reach an accepted submit. The popup shows the "Include Pro" box only for lists that
+  contain Pro problems.
 - `topics` holds a single entry, NeetCode's `pattern` (18 values).
 - Session `filters.topics` is an array, empty means all. Sessions stored before multi-topic carry
   `filters.topic` (a string); `filterProblems` reads both.
@@ -73,7 +74,7 @@ same palette.
 
 ## Verifying changes
 
-- `node --check` on every JS file. A data rebuild asserts the 75 / 150 / 250 counts itself.
+- `node --check` on every JS file. A data rebuild asserts the 75 / 150 / 250 / 100 counts itself.
 - Visual check without loading the extension: copy the popup and content files to a `/tmp` dir, add a
   stub `window.chrome` (`storage.local.get/set/remove`, `storage.onChanged`, `runtime.getURL/sendMessage`)
   loaded before the scripts, serve with `python3 -m http.server`, and screenshot with

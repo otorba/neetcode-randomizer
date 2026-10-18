@@ -7,9 +7,9 @@ extension (MIT) to NeetCode.
 
 ## Features
 
-- Pick a list (Blind 75, NeetCode 150, NeetCode 250 or NeetCode All), a session size (1-10), any
-  combination of topics and difficulties. NeetCode All includes Pro problems only when "Include Pro"
-  is checked.
+- Pick a list (Blind 75, NeetCode 150, NeetCode 250, Premium 100 or NeetCode All), a session size
+  (1-10), any combination of topics and difficulties. Pro problems (most of Premium 100, part of
+  NeetCode All) are included only when "Include Pro" is checked.
 - Problems open on `neetcode.io/problems/<slug>`. Next unlocks only after an accepted **Submit**
   (a passing Run does not count).
 - In-page session sidebar (`Alt+Shift+H` to expand/collapse): session and problem timers, progress,

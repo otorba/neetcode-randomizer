@@ -14,7 +14,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // Bundle flag -> expected size. Must match the list ids in data/problem-lists.js.
-const LIST_SIZES = { blind75: 75, neetcode150: 150, neetcode250: 250 };
+const LIST_SIZES = { blind75: 75, neetcode150: 150, neetcode250: 250, premiumAlgo100: 100 };
 
 const bundlePath = process.argv[2];
 if (!bundlePath) {
