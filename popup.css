@@ -129,15 +129,6 @@ body {
   padding: 14px;
 }
 
-.section-label {
-  margin-bottom: 12px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
 .field {
   margin: 0 0 12px;
   border: 0;
@@ -197,26 +188,6 @@ select option {
   gap: 8px;
 }
 
-.checkbox-grid--two {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.checkbox-option--segment input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.checkbox-option--segment {
-  position: relative;
-}
-
 .checkbox-option {
   display: flex;
   align-items: center;
@@ -245,6 +216,70 @@ select option {
   border-color: rgba(97, 95, 255, 0.35);
   background: var(--accent-soft);
   box-shadow: inset 0 0 0 1px rgba(97, 95, 255, 0.08);
+}
+
+.field--inline {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.field--inline legend {
+  float: left;
+  margin: 0;
+}
+
+.field--inline .checkbox-grid {
+  flex: 1;
+}
+
+.field--inline .checkbox-option {
+  margin: 0;
+  min-height: 34px;
+  padding: 6px 10px;
+}
+
+.topic-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.topic-header legend {
+  float: left;
+}
+
+.topic-all {
+  display: flex;
+  margin: 0;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.topic-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.topic-grid .checkbox-option {
+  margin: 0;
+  min-height: 0;
+  padding: 5px 9px;
+  gap: 6px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+}
+
+.topic-grid .checkbox-option input,
+.topic-all input {
+  width: 13px;
+  height: 13px;
 }
 
 .checkbox-option-wide {
@@ -276,7 +311,8 @@ select option {
   line-height: 1.4;
 }
 
-.checkbox-option:not(.checkbox-option--segment) input,
+.checkbox-option input,
+.topic-all input,
 .toggle-option input {
   width: 16px;
   height: 16px;
@@ -290,8 +326,8 @@ select option {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  min-height: 52px;
-  padding: 10px 14px;
+  min-height: 44px;
+  padding: 8px 14px;
   border: 1px solid var(--panel-border);
   border-radius: var(--radius-sm);
   background: var(--input-bg);

@@ -15,7 +15,9 @@ const state = {
 
 const elements = {
   form: document.getElementById("filters-form"),
-  topicSelect: document.getElementById("topic-select"),
+  problemListSelect: document.getElementById("problem-list-select"),
+  allTopics: document.getElementById("all-topics"),
+  topicGrid: document.getElementById("topic-grid"),
   questionCountSelect: document.getElementById("question-count"),
   questionCountHint: document.getElementById("question-count-hint"),
   statusMessage: document.getElementById("status-message"),
@@ -31,6 +33,7 @@ async function init() {
   try {
     state.problems = await loadProblems();
     await loadStoredSettings();
+    populateProblemListOptions();
     hydrateSettingsForm();
     populateTopicOptions();
     updateQuestionCountOptions();
@@ -47,22 +50,30 @@ function bindEvents() {
     await startSession();
   });
 
-  elements.topicSelect.addEventListener("change", updateQuestionCountOptions);
+  elements.allTopics.addEventListener("change", () => {
+    for (const input of getTopicInputs()) {
+      input.checked = elements.allTopics.checked;
+    }
+    updateQuestionCountOptions();
+  });
+
+  elements.topicGrid.addEventListener("change", () => {
+    syncAllTopicsCheckbox();
+    updateQuestionCountOptions();
+  });
 
   for (const input of elements.form.querySelectorAll('input[name="difficulty"]')) {
     input.addEventListener("change", updateQuestionCountOptions);
   }
 
-  for (const input of elements.form.querySelectorAll('input[name="problemList"]')) {
-    input.addEventListener("change", async () => {
-      state.settings.problemList = getSelectedProblemList();
-      await chrome.storage.local.set({
-        [SETTINGS_STORAGE_KEY]: state.settings
-      });
-      populateTopicOptions();
-      updateQuestionCountOptions();
+  elements.problemListSelect.addEventListener("change", async () => {
+    state.settings.problemList = elements.problemListSelect.value;
+    await chrome.storage.local.set({
+      [SETTINGS_STORAGE_KEY]: state.settings
     });
-  }
+    populateTopicOptions();
+    updateQuestionCountOptions();
+  });
 
   elements.autoResetEnabled.addEventListener("change", async () => {
     state.settings.autoResetEnabled = elements.autoResetEnabled.checked;
@@ -93,50 +104,66 @@ async function loadStoredSettings() {
   }
 }
 
-function hydrateSettingsForm() {
-  elements.autoResetEnabled.checked = state.settings.autoResetEnabled;
-
-  const problemListInput = elements.form.querySelector(
-    `input[name="problemList"][value="${state.settings.problemList}"]`
-  );
-  if (problemListInput) {
-    problemListInput.checked = true;
+function populateProblemListOptions() {
+  for (const list of PROBLEM_LISTS) {
+    const option = document.createElement("option");
+    option.value = list.id;
+    option.textContent = list.label;
+    elements.problemListSelect.appendChild(option);
   }
 }
 
-function getSelectedProblemList() {
-  const selected = elements.form.querySelector('input[name="problemList"]:checked');
-  return selected?.value || DEFAULT_PROBLEM_LIST;
+function hydrateSettingsForm() {
+  elements.autoResetEnabled.checked = state.settings.autoResetEnabled;
+  elements.problemListSelect.value = state.settings.problemList;
 }
 
-function getActiveProblemPool() {
-  return getProblemsForList(state.problems, getSelectedProblemList());
+function getTopicInputs() {
+  return elements.topicGrid.querySelectorAll('input[name="topic"]');
 }
 
+function syncAllTopicsCheckbox() {
+  const inputs = getTopicInputs();
+  const checkedCount = elements.topicGrid.querySelectorAll(
+    'input[name="topic"]:checked'
+  ).length;
+
+  elements.allTopics.checked = checkedCount === inputs.length;
+  elements.allTopics.indeterminate =
+    checkedCount > 0 && checkedCount < inputs.length;
+}
+
+// Rebuilds the topic checkboxes for the selected list. Topics that were already
+// shown keep their state; new ones follow "All topics".
 function populateTopicOptions() {
-  const pool = getActiveProblemPool();
+  const pool = getProblemsForList(state.problems, elements.problemListSelect.value);
   const topics = Array.from(
     new Set(pool.flatMap((problem) => problem.topics))
   ).sort((a, b) => a.localeCompare(b));
 
-  const previousTopic = elements.topicSelect.value;
-  elements.topicSelect.replaceChildren();
-
-  const allTopicsOption = document.createElement("option");
-  allTopicsOption.value = "";
-  allTopicsOption.textContent = "All topics";
-  elements.topicSelect.appendChild(allTopicsOption);
+  const previousChecked = new Map(
+    Array.from(getTopicInputs(), (input) => [input.value, input.checked])
+  );
+  elements.topicGrid.replaceChildren();
 
   for (const topic of topics) {
-    const option = document.createElement("option");
-    option.value = topic;
-    option.textContent = topic;
-    elements.topicSelect.appendChild(option);
+    const label = document.createElement("label");
+    label.className = "checkbox-option";
+
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.name = "topic";
+    input.value = topic;
+    input.checked = previousChecked.get(topic) ?? elements.allTopics.checked;
+
+    const text = document.createElement("span");
+    text.textContent = topic;
+
+    label.append(input, text);
+    elements.topicGrid.appendChild(label);
   }
 
-  if (previousTopic && topics.includes(previousTopic)) {
-    elements.topicSelect.value = previousTopic;
-  }
+  syncAllTopicsCheckbox();
 }
 
 function getFilters() {
@@ -144,13 +171,18 @@ function getFilters() {
   return {
     count: Number(formData.get("count")),
     difficulties: formData.getAll("difficulty"),
-    topic: formData.get("topic") || "",
+    // Empty means all topics, so a later list switch can't pin stale names.
+    topics: elements.allTopics.checked ? [] : formData.getAll("topic"),
     problemList: formData.get("problemList") || DEFAULT_PROBLEM_LIST
   };
 }
 
+function hasTopicSelection(filters) {
+  return elements.allTopics.checked || filters.topics.length > 0;
+}
+
 function getMatchingProblemCount(filters = getFilters()) {
-  if (!filters.difficulties.length) {
+  if (!filters.difficulties.length || !hasTopicSelection(filters)) {
     return 0;
   }
 
@@ -172,12 +204,20 @@ function updateQuestionCountOptions() {
     return;
   }
 
+  if (!hasTopicSelection(filters)) {
+    elements.questionCountSelect.disabled = true;
+    elements.startButton.disabled = true;
+    elements.questionCountHint.textContent =
+      "Select at least one topic to choose a session size.";
+    return;
+  }
+
   if (matchingCount === 0) {
     elements.questionCountSelect.disabled = true;
     elements.startButton.disabled = true;
     const listLabel = getProblemListLabel(filters.problemList);
-    elements.questionCountHint.textContent = filters.topic
-      ? `No ${filters.topic} problems in ${listLabel} match the selected difficulties.`
+    elements.questionCountHint.textContent = filters.topics.length
+      ? `No problems in ${listLabel} match the selected topics and difficulties.`
       : `No problems in ${listLabel} match the selected difficulties.`;
     return;
   }
@@ -196,11 +236,12 @@ function updateQuestionCountOptions() {
   elements.questionCountSelect.disabled = false;
   elements.startButton.disabled = false;
 
-  if (filters.topic) {
+  if (filters.topics.length === 1) {
+    const [topic] = filters.topics;
     elements.questionCountHint.textContent =
       matchingCount === 1
-        ? `1 ${filters.topic} problem available.`
-        : `${matchingCount} ${filters.topic} problems available. Max session size: ${maxSelectable}.`;
+        ? `1 ${topic} problem available.`
+        : `${matchingCount} ${topic} problems available. Max session size: ${maxSelectable}.`;
   } else if (matchingCount > MAX_QUESTION_COUNT) {
     elements.questionCountHint.textContent = `${matchingCount} problems available. You can queue up to ${MAX_QUESTION_COUNT}.`;
   } else {
@@ -216,6 +257,11 @@ async function startSession() {
 
   if (!filters.difficulties.length) {
     setStatusMessage("Select at least one difficulty.");
+    return;
+  }
+
+  if (!hasTopicSelection(filters)) {
+    setStatusMessage("Select at least one topic.");
     return;
   }
 
