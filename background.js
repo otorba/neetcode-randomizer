@@ -68,6 +68,11 @@ async function markProblemAccepted(slug, sessionId) {
     return validationError;
   }
 
+  // The solve time stops here; naming the pattern and reading the editorial after an
+  // accepted submit don't count against it.
+  if (session.acceptedSlug !== slug) {
+    session.currentSolveMs = getCurrentProblemElapsed(session);
+  }
   session.acceptedSlug = slug;
   await setSession(session);
   return { ok: true, status: "ready_to_advance", slug };
@@ -177,11 +182,10 @@ async function recordCurrentProblemAttempt(session, outcome) {
   }
 
   const endedAt = getEffectiveNow(session);
-  const startedAt = session.currentProblemStartedAt || session.startedAt;
-  const elapsedMs = Math.max(
-    0,
-    endedAt - startedAt - (session.currentProblemPausedMs || 0)
-  );
+  const elapsedMs =
+    outcome === "solved" && session.currentSolveMs !== null
+      ? session.currentSolveMs
+      : getCurrentProblemElapsed(session);
   const guess = session.patternChoices.length ? session.currentGuess : null;
 
   if (outcome !== "rerolled") {
@@ -211,8 +215,17 @@ async function recordCurrentProblemAttempt(session, outcome) {
   });
 }
 
+function getCurrentProblemElapsed(session) {
+  const startedAt = session.currentProblemStartedAt || session.startedAt;
+  return Math.max(
+    0,
+    getEffectiveNow(session) - startedAt - (session.currentProblemPausedMs || 0)
+  );
+}
+
 function startCurrentProblem(session) {
   session.acceptedSlug = null;
+  session.currentSolveMs = null;
   session.currentProblemStartedAt = Date.now();
   session.currentProblemPausedMs = 0;
   session.currentWrongSubmits = 0;
@@ -447,6 +460,7 @@ async function getSession() {
   session.currentWrongSubmits ??= 0;
   session.currentSawSolution ??= false;
   session.currentGuess ??= null;
+  session.currentSolveMs ??= null;
   if (session.currentIndex >= session.size && !session.completedAt) {
     session.completedAt = getEffectiveNow(session);
   }
