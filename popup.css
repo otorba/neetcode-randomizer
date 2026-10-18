@@ -218,7 +218,7 @@ select option {
   box-shadow: inset 0 0 0 1px rgba(97, 95, 255, 0.08);
 }
 
-.field--inline {
+.field.field--inline {
   margin-bottom: 12px;
   display: flex;
   align-items: center;
@@ -264,7 +264,7 @@ select option {
 .topic-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
 }
 
 .topic-grid .checkbox-option {
