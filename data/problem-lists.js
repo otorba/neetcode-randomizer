@@ -4,13 +4,15 @@ const PROBLEM_LIST_ALL = "allNC";
 const DEFAULT_PROBLEM_LIST = "neetcode150";
 
 // Ids match the list flags in problems.json `lists`, except "allNC", which is every
-// problem. Only "premiumAlgo100" and "allNC" hold Pro problems.
+// problem. Only "premiumAlgo100" and "allNC" hold Pro problems. `widensTo` is the
+// next larger list that contains this one, where adaptive picks go once a topic runs
+// out of unseen problems.
 const PROBLEM_LISTS = [
-  { id: "blind75", label: "Blind 75" },
-  { id: "neetcode150", label: "NeetCode 150" },
-  { id: "neetcode250", label: "NeetCode 250" },
-  { id: "premiumAlgo100", label: "Premium 100" },
-  { id: PROBLEM_LIST_ALL, label: "NeetCode All" }
+  { id: "blind75", label: "Blind 75", widensTo: "neetcode150" },
+  { id: "neetcode150", label: "NeetCode 150", widensTo: "neetcode250" },
+  { id: "neetcode250", label: "NeetCode 250", widensTo: PROBLEM_LIST_ALL },
+  { id: "premiumAlgo100", label: "Premium 100", widensTo: PROBLEM_LIST_ALL },
+  { id: PROBLEM_LIST_ALL, label: "NeetCode All", widensTo: null }
 ];
 
 function isKnownProblemList(problemList) {
@@ -19,6 +21,20 @@ function isKnownProblemList(problemList) {
 
 function getProblemListLabel(problemList) {
   return PROBLEM_LISTS.find((list) => list.id === problemList)?.label || problemList;
+}
+
+// The list itself first, then every larger list that contains it.
+function getWideningChain(problemList) {
+  const chain = [];
+  for (
+    let list = PROBLEM_LISTS.find((entry) => entry.id === problemList);
+    list;
+    list = PROBLEM_LISTS.find((entry) => entry.id === list.widensTo)
+  ) {
+    chain.push(list.id);
+  }
+
+  return chain;
 }
 
 // Pro problems are opt-in: without a subscription NeetCode shows a paywall and

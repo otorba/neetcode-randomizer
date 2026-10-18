@@ -25,7 +25,8 @@ const elements = {
   autoResetEnabled: document.getElementById("auto-reset-enabled"),
   includePro: document.getElementById("include-pro"),
   includeProOption: document.getElementById("include-pro-option"),
-  startButton: document.getElementById("generate-button")
+  startButton: document.getElementById("generate-button"),
+  progressButton: document.getElementById("progress-button")
 };
 
 document.addEventListener("DOMContentLoaded", init);
@@ -48,6 +49,11 @@ async function init() {
 }
 
 function bindEvents() {
+  elements.progressButton.addEventListener("click", async () => {
+    await chrome.tabs.create({ url: chrome.runtime.getURL("progress.html") });
+    window.close();
+  });
+
   elements.form.addEventListener("submit", async (event) => {
     event.preventDefault();
     await startSession();
@@ -199,7 +205,8 @@ function getFilters() {
     // Empty means all topics, so a later list switch can't pin stale names.
     topics: elements.allTopics.checked ? [] : formData.getAll("topic"),
     problemList: formData.get("problemList") || DEFAULT_PROBLEM_LIST,
-    includePro: elements.includePro.checked
+    // A hidden box doesn't apply, so adaptive picks that widen past the list stay free.
+    includePro: !elements.includeProOption.hidden && elements.includePro.checked
   };
 }
 
@@ -268,6 +275,8 @@ function updateQuestionCountOptions() {
       matchingCount === 1
         ? `1 ${topic} problem available.`
         : `${matchingCount} ${topic} problems available. Max session size: ${maxSelectable}.`;
+  } else if (!filters.topics.length) {
+    elements.questionCountHint.textContent = `${matchingCount} problems. Picks adapt to your progress.`;
   } else if (matchingCount > MAX_QUESTION_COUNT) {
     elements.questionCountHint.textContent = `${matchingCount} problems available. You can queue up to ${MAX_QUESTION_COUNT}.`;
   } else {
@@ -292,7 +301,22 @@ async function startSession() {
   }
 
   const matchingProblems = filterProblems(state.problems, filters);
-  const queue = shuffle(matchingProblems).slice(0, filters.count);
+  // All topics means an adaptive session: each problem is picked when it's reached,
+  // from the attempt history. A topic selection keeps the plain shuffle.
+  const adaptive = !filters.topics.length;
+  let queue;
+  if (adaptive) {
+    const stored = await chrome.storage.local.get(HISTORY_STORAGE_KEY);
+    const firstPick = pickAdaptiveProblem(
+      state.problems,
+      filters,
+      stored[HISTORY_STORAGE_KEY] || [],
+      new Set()
+    );
+    queue = firstPick ? [firstPick] : [];
+  } else {
+    queue = shuffle(matchingProblems).slice(0, filters.count);
+  }
 
   if (!queue.length) {
     setStatusMessage("No problems matched those filters.");
@@ -307,6 +331,9 @@ async function startSession() {
     id: crypto.randomUUID(),
     filters,
     queue,
+    size: adaptive ? filters.count : queue.length,
+    adaptive,
+    patternChoices: getPatternChoices(filters),
     totalMatches: matchingProblems.length,
     currentIndex: 0,
     completedSlugs: [],
@@ -319,7 +346,10 @@ async function startSession() {
     totalPausedMs: 0,
     currentProblemPausedMs: 0,
     completedAt: null,
-    questionTimes: []
+    questionTimes: [],
+    currentWrongSubmits: 0,
+    currentSawSolution: false,
+    currentGuess: null
   };
 
   try {
@@ -338,6 +368,15 @@ async function startSession() {
     setStatusMessage(error.message);
     elements.startButton.disabled = false;
   }
+}
+
+// The patterns offered when naming one. Adaptive sessions offer every pattern, so the
+// choices say nothing about which lists a pick came from. A single topic needs no guess.
+function getPatternChoices(filters) {
+  const topics = filters.topics.length
+    ? filters.topics
+    : Array.from(new Set(state.problems.flatMap((problem) => problem.topics)));
+  return topics.length > 1 ? [...topics].sort((a, b) => a.localeCompare(b)) : [];
 }
 
 function setStatusMessage(message) {

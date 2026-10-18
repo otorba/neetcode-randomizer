@@ -18,6 +18,11 @@ const RESET_WAIT_TIMEOUT_MS = 15000;
 const RESET_CONFIRM_TIMEOUT_MS = 3000;
 const RESET_CONFIRM_DELAY_MS = 300;
 const URL_WATCH_INTERVAL_MS = 500;
+// Route /problems/:problemId/:tab; NeetCode's tab enum value for the editorial.
+const SOLUTION_TAB = "solution";
+// The question tab lists the problem's tags in a <details> with this summary.
+const TOPICS_DISCLOSURE_TITLE = "Topics";
+const HIDDEN_DISCLOSURE_ATTRIBUTE = "data-neetcode-randomizer-hidden";
 const MAX_VERDICT_LENGTH = 80;
 const TIMER_INTERVAL_MS = 1000;
 const TOGGLE_SHORTCUT_LABEL = "Alt+Shift+H";
@@ -35,11 +40,14 @@ let lastReportedSessionItem = null;
 let timerIntervalId = null;
 let urlWatchId = null;
 let lastObservedSlug = null;
+let lastObservedPath = null;
 let lastAutoResetSlug = null;
 let overlayMessage = "";
 let actionPending = false;
 let sidebarHost = null;
-let acceptedPromptHost = null;
+let outcomePromptHost = null;
+// "accepted" or "skip" while the outcome prompt is open, otherwise null.
+let outcomePromptMode = null;
 let headerTimerHost = null;
 let celebrationHost = null;
 let celebrationSessionId = null;
@@ -66,12 +74,15 @@ async function initialize() {
   if (isSessionComplete(activeSession)) {
     showCelebrationScreen();
   } else {
-    maybeRestoreAcceptedPrompt();
+    syncOutcomePrompt();
   }
   startWatching();
 
   lastObservedSlug = getProblemSlug();
+  lastObservedPath = window.location.pathname;
   void maybeScheduleEditorReset();
+  maybeReportSolutionView();
+  syncTopicsDisclosure();
 }
 
 function normalizeSidebarPrefs(prefs = {}) {
@@ -151,6 +162,17 @@ function startUrlWatching() {
   }
 
   urlWatchId = window.setInterval(() => {
+    // NeetCode renders the question tab lazily, so keep checking for its Topics block.
+    syncTopicsDisclosure();
+
+    const path = window.location.pathname;
+    if (path === lastObservedPath) {
+      return;
+    }
+
+    lastObservedPath = path;
+    maybeReportSolutionView();
+
     const slug = getProblemSlug();
     if (!slug || slug === lastObservedSlug) {
       return;
@@ -202,7 +224,19 @@ function isSessionComplete(session = activeSession) {
     return false;
   }
 
-  return session.currentIndex >= session.queue.length;
+  return session.currentIndex >= getSessionSize(session);
+}
+
+// Adaptive sessions pick each problem when it's reached, so the queue can be shorter
+// than the session. Sessions stored before that have no `size`.
+function getSessionSize(session = activeSession) {
+  return session.size ?? session.queue.length;
+}
+
+function isGuessPending(session = activeSession) {
+  return (
+    Boolean(session?.patternChoices?.length) && (session.currentGuess ?? null) === null
+  );
 }
 
 function isSessionPaused(session = activeSession) {
@@ -255,6 +289,11 @@ async function checkForSubmissionResult() {
 
   if (status !== ACCEPTED_TEXT) {
     clearSubmissionWatch();
+    void reportToSession({
+      type: "NEETCODE_SUBMISSION_REJECTED",
+      slug: getCurrentProblem().slug,
+      sessionId: activeSession.id
+    });
     overlayMessage = `Not accepted: ${status}`;
     renderSessionSidebar();
     renderHeaderTimer();
@@ -277,9 +316,7 @@ async function recordAcceptedAndShowPrompt() {
     activeSession = { ...activeSession, acceptedSlug: currentProblem.slug };
     renderSessionSidebar();
     renderHeaderTimer();
-    if (!acceptedPromptHost?.isConnected) {
-      showAcceptedPrompt(currentProblem.slug, activeSession.id);
-    }
+    openOutcomePrompt("accepted");
     return;
   }
 
@@ -297,8 +334,10 @@ async function recordAcceptedAndShowPrompt() {
     lastReportedSessionItem = reportKey;
     activeSession = { ...activeSession, acceptedSlug: currentProblem.slug };
     clearSubmissionWatch();
-    overlayMessage = "Accepted — Next is now unlocked.";
-    showAcceptedPrompt(currentProblem.slug, activeSession.id);
+    overlayMessage = isGuessPending()
+      ? "Accepted — name the pattern to unlock Next."
+      : "Accepted — Next is now unlocked.";
+    openOutcomePrompt("accepted");
   } catch (error) {
     console.error("Failed to report accepted problem:", error);
     overlayMessage = error.message;
@@ -399,7 +438,7 @@ function handleStorageChange(changes, areaName) {
     lastReportedSessionItem = null;
     overlayMessage = "";
     celebrationSessionId = null;
-    removeAcceptedPrompt();
+    removeOutcomePrompt();
     removeCelebrationScreen();
     removeSidebarHost();
     removeHeaderTimer();
@@ -413,14 +452,14 @@ function handleStorageChange(changes, areaName) {
     celebrationSessionId = null;
     lastAutoResetSlug = null;
     removeCelebrationScreen();
-    removeAcceptedPrompt();
+    removeOutcomePrompt();
     sidebarPrefs.expanded = true;
     void saveSidebarPrefs();
     void maybeScheduleEditorReset();
   } else if (previousSession?.currentIndex !== activeSession.currentIndex) {
     clearSubmissionWatch();
     overlayMessage = "";
-    removeAcceptedPrompt();
+    removeOutcomePrompt();
     void maybeScheduleEditorReset();
   } else if (
     getCurrentProblem(previousSession)?.slug !==
@@ -429,16 +468,17 @@ function handleStorageChange(changes, areaName) {
     clearSubmissionWatch();
     lastReportedSessionItem = null;
     overlayMessage = "New question loaded.";
-    removeAcceptedPrompt();
+    removeOutcomePrompt();
     void maybeScheduleEditorReset();
   }
 
   if (isSessionComplete(activeSession)) {
     showCelebrationScreen();
   } else {
-    maybeRestoreAcceptedPrompt();
+    syncOutcomePrompt();
   }
 
+  syncTopicsDisclosure();
   renderSessionSidebar();
   renderHeaderTimer();
   syncTimerState();
@@ -454,7 +494,7 @@ function renderSessionSidebar() {
   ensureSidebarHost();
 
   const shadow = sidebarHost.shadowRoot;
-  const total = activeSession.queue.length;
+  const total = getSessionSize();
   const currentProblem = getCurrentProblem();
   const isComplete = activeSession.currentIndex >= total;
   const isAccepted =
@@ -520,9 +560,7 @@ function renderSessionSidebar() {
           <strong>${escapeHtml(currentProblem?.title || "Queue finished")}</strong>
           ${
             currentProblem
-              ? `<span>${escapeHtml(currentProblem.difficulty)} · ${escapeHtml(
-                  currentProblem.topics[0] || "General"
-                )}</span>`
+              ? `<span>${escapeHtml(currentProblem.difficulty)}</span>`
               : `<span>You reached the end of this queue.</span>`
           }
         </section>
@@ -631,92 +669,148 @@ async function toggleSidebarExpanded(nextExpanded = !sidebarPrefs.expanded) {
   await saveSidebarPrefs();
 }
 
-function maybeRestoreAcceptedPrompt() {
+// Shows the outcome prompt when the session state calls for it: after an accepted
+// submit, or after a guess made while skipping (so a reload keeps the reveal).
+function syncOutcomePrompt() {
   const currentProblem = getCurrentProblem();
-  if (
-    !activeSession ||
-    !currentProblem ||
-    activeSession.acceptedSlug !== currentProblem.slug ||
-    acceptedPromptHost?.isConnected
-  ) {
+  if (!currentProblem || isSessionComplete()) {
+    removeOutcomePrompt();
     return;
   }
 
-  showAcceptedPrompt(currentProblem.slug, activeSession.id);
+  if (activeSession.acceptedSlug === currentProblem.slug) {
+    openOutcomePrompt("accepted");
+  } else if (activeSession.patternChoices?.length && !isGuessPending()) {
+    openOutcomePrompt("skip");
+  } else if (outcomePromptMode === "skip") {
+    renderOutcomePrompt();
+  } else {
+    removeOutcomePrompt();
+  }
 }
 
-function showAcceptedPrompt(slug, sessionId) {
-  removeAcceptedPrompt();
+function openOutcomePrompt(mode) {
+  outcomePromptMode = mode;
+  renderOutcomePrompt();
+}
 
-  acceptedPromptHost = document.createElement("div");
-  acceptedPromptHost.id = "neetcode-randomizer-accepted-host";
-  acceptedPromptHost.style.position = "fixed";
-  acceptedPromptHost.style.left = "50%";
-  acceptedPromptHost.style.bottom = "28px";
-  acceptedPromptHost.style.transform = "translateX(-50%)";
-  acceptedPromptHost.style.zIndex = "2147483647";
-  acceptedPromptHost.attachShadow({ mode: "open" });
+// Accepted: name the pattern (when the session asks), see the answer, then Next.
+// Skip: the same, then Skip. Without pattern choices it's the plain Next prompt.
+function renderOutcomePrompt() {
+  const currentProblem = getCurrentProblem();
+  if (!currentProblem || !outcomePromptMode) {
+    removeOutcomePrompt();
+    return;
+  }
 
-  acceptedPromptHost.shadowRoot.innerHTML = `
-    <style>${getAcceptedPromptStyles()}</style>
-    <section class="prompt" aria-label="Accepted submission">
-      <div class="copy">
-        <strong>Correct</strong>
-        <span>Ready for the next question?</span>
+  if (!outcomePromptHost?.isConnected) {
+    outcomePromptHost = document.createElement("div");
+    outcomePromptHost.id = "neetcode-randomizer-outcome-host";
+    outcomePromptHost.style.position = "fixed";
+    outcomePromptHost.style.left = "50%";
+    outcomePromptHost.style.bottom = "28px";
+    outcomePromptHost.style.transform = "translateX(-50%)";
+    outcomePromptHost.style.zIndex = "2147483647";
+    outcomePromptHost.attachShadow({ mode: "open" });
+    document.documentElement.appendChild(outcomePromptHost);
+  }
+
+  const isAccepted = outcomePromptMode === "accepted";
+  const choices = activeSession.patternChoices || [];
+  const guess = activeSession.currentGuess ?? null;
+  const pattern = currentProblem.topics[0];
+  const disabled = actionPending ? "disabled" : "";
+
+  let body;
+  if (choices.length && guess === null) {
+    body = `
+      <span>Which pattern was this?</span>
+      <div class="choices">
+        ${choices
+          .map(
+            (choice) =>
+              `<button type="button" class="choice" data-guess="${escapeHtml(choice)}" ${disabled}>${escapeHtml(choice)}</button>`
+          )
+          .join("")}
+        <button type="button" class="choice unsure" data-guess="" ${disabled}>Not sure</button>
       </div>
-      <button type="button" id="lr-accepted-next">Next</button>
+      ${isAccepted ? "" : `<button type="button" class="text-button" data-action="cancel">Keep solving</button>`}
+    `;
+  } else {
+    const reveal = !choices.length
+      ? `<span>Ready for the next question?</span>`
+      : guess === pattern
+        ? `<span class="reveal right">✓ ${escapeHtml(pattern)}</span>`
+        : guess
+          ? `<span class="reveal wrong">You said ${escapeHtml(guess)} · it was <b>${escapeHtml(pattern)}</b></span>`
+          : `<span class="reveal">It was <b>${escapeHtml(pattern)}</b></span>`;
+    body = `
+      <div class="result">
+        ${reveal}
+        <button type="button" class="next ${isAccepted ? "" : "skip"}" data-action="${isAccepted ? "next" : "skip"}" ${disabled}>${isAccepted ? "Next" : "Skip"}</button>
+      </div>
+    `;
+  }
+
+  outcomePromptHost.shadowRoot.innerHTML = `
+    <style>${getOutcomePromptStyles()}</style>
+    <section class="prompt ${isAccepted ? "accepted" : "skipping"}" aria-label="${isAccepted ? "Accepted submission" : "Skip problem"}">
+      <strong>${isAccepted ? "Correct" : "Skipping"}</strong>
+      ${body}
     </section>
   `;
 
-  acceptedPromptHost.shadowRoot
-    .getElementById("lr-accepted-next")
-    .addEventListener("click", async () => {
-      await advanceFromAcceptedPrompt(slug, sessionId);
+  for (const button of outcomePromptHost.shadowRoot.querySelectorAll("[data-guess]")) {
+    button.addEventListener("click", () => {
+      void submitPatternGuess(button.dataset.guess);
     });
+  }
 
-  document.documentElement.appendChild(acceptedPromptHost);
+  for (const button of outcomePromptHost.shadowRoot.querySelectorAll("[data-action]")) {
+    button.addEventListener("click", () => {
+      if (button.dataset.action === "cancel") {
+        removeOutcomePrompt();
+        return;
+      }
+
+      void handleSidebarAction(button.dataset.action);
+    });
+  }
 }
 
-async function advanceFromAcceptedPrompt(slug, sessionId) {
-  if (actionPending) {
+async function submitPatternGuess(guess) {
+  const currentProblem = getCurrentProblem();
+  if (!currentProblem || actionPending) {
     return;
   }
 
-  actionPending = true;
-  removeAcceptedPrompt();
-  overlayMessage = "Loading the next problem…";
-  renderSessionSidebar();
-
   try {
     const response = await chrome.runtime.sendMessage({
-      type: "ADVANCE_TO_NEXT_PROBLEM",
-      slug,
-      sessionId
+      type: "RECORD_PATTERN_GUESS",
+      slug: currentProblem.slug,
+      sessionId: activeSession.id,
+      guess
     });
-
     if (!response?.ok) {
-      throw new Error(response?.error || "Could not move to the next problem.");
+      throw new Error(response?.error || "Could not record the pattern.");
     }
 
-    if (response.status === "completed") {
-      overlayMessage = "";
-      actionPending = false;
-      showCelebrationScreen();
-      renderSessionSidebar();
-      syncTimerState();
-    }
+    activeSession = { ...activeSession, currentGuess: response.guess };
+    overlayMessage = "";
   } catch (error) {
-    console.error("Failed to advance from accepted prompt:", error);
-    actionPending = false;
+    console.error("Failed to record the pattern guess:", error);
     overlayMessage = error.message;
-    renderSessionSidebar();
-    showAcceptedPrompt(slug, sessionId);
   }
+
+  renderOutcomePrompt();
+  renderSessionSidebar();
+  syncTopicsDisclosure();
 }
 
-function removeAcceptedPrompt() {
-  acceptedPromptHost?.remove();
-  acceptedPromptHost = null;
+function removeOutcomePrompt() {
+  outcomePromptHost?.remove();
+  outcomePromptHost = null;
+  outcomePromptMode = null;
 }
 
 function getCelebrationStats() {
@@ -739,7 +833,7 @@ function showCelebrationScreen() {
 
   celebrationSessionId = activeSession.id;
   removeCelebrationScreen();
-  removeAcceptedPrompt();
+  removeOutcomePrompt();
 
   const { totalMs, averageMs, times } = getCelebrationStats();
   const solvedCount = times.filter((entry) => entry.outcome === "completed").length;
@@ -760,7 +854,7 @@ function showCelebrationScreen() {
               <span class="index">${index + 1}</span>
               <div class="question-info">
                 <strong>${escapeHtml(entry.title)}</strong>
-                <span class="meta">${escapeHtml(entry.difficulty)}</span>
+                <span class="meta">${escapeHtml(formatQuestionMeta(entry))}</span>
               </div>
               <span class="outcome-badge">${entry.outcome === "completed" ? "Solved" : "Skipped"}</span>
               <span class="time">${formatElapsed(entry.elapsedMs)}</span>
@@ -813,6 +907,24 @@ function showCelebrationScreen() {
   }
 
   document.documentElement.appendChild(celebrationHost);
+}
+
+function formatQuestionMeta(entry) {
+  const parts = [entry.difficulty];
+  if (entry.topic) {
+    parts.push(entry.topic);
+  }
+  if (entry.guess != null) {
+    parts.push(
+      entry.guess === entry.topic
+        ? "✓ named"
+        : entry.guess
+          ? `✗ you said ${entry.guess}`
+          : "not named"
+    );
+  }
+
+  return parts.join(" · ");
 }
 
 function removeCelebrationScreen() {
@@ -1029,7 +1141,7 @@ function renderHeaderTimer() {
   ensureHeaderTimerHost();
   mountHeaderTimer();
 
-  const total = activeSession.queue.length;
+  const total = getSessionSize();
   const isComplete = activeSession.currentIndex >= total;
   const position = isComplete
     ? `${total}/${total}`
@@ -1151,7 +1263,7 @@ function updateTimerDisplay() {
     }
 
     if (progressTab) {
-      const total = activeSession.queue.length;
+      const total = getSessionSize();
       const isComplete = activeSession.currentIndex >= total;
       progressTab.textContent = isComplete
         ? `${total}/${total}`
@@ -1226,6 +1338,12 @@ async function handleSidebarAction(action) {
     return;
   }
 
+  // Next and Skip go through the pattern question first.
+  if ((action === "next" || action === "skip") && isGuessPending()) {
+    openOutcomePrompt(action === "next" ? "accepted" : "skip");
+    return;
+  }
+
   const currentProblem = getCurrentProblem();
   const messages = {
     next: {
@@ -1259,6 +1377,7 @@ async function handleSidebarAction(action) {
   }
 
   actionPending = true;
+  renderOutcomePrompt();
   overlayMessage =
     action === "pause"
       ? activeSession.isPaused
@@ -1302,6 +1421,7 @@ async function handleSidebarAction(action) {
     actionPending = false;
     overlayMessage = error.message;
     renderSessionSidebar();
+    renderOutcomePrompt();
   }
 }
 
@@ -1519,16 +1639,16 @@ function getSidebarStyles() {
   `;
 }
 
-function getAcceptedPromptStyles() {
+function getOutcomePromptStyles() {
   return `
     :host { all: initial; }
     * { box-sizing: border-box; }
     .prompt {
       display: flex;
-      align-items: center;
-      gap: 14px;
-      min-width: 260px;
-      padding: 12px 12px 12px 14px;
+      flex-direction: column;
+      gap: 8px;
+      width: min(560px, calc(100vw - 32px));
+      padding: 12px 14px;
       border: 1px solid rgba(72, 199, 142, .25);
       border-radius: 16px;
       background: rgba(32, 34, 37, .96);
@@ -1537,24 +1657,63 @@ function getAcceptedPromptStyles() {
       backdrop-filter: blur(18px);
       font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-    .copy {
-      display: flex;
-      flex: 1;
-      min-width: 0;
-      flex-direction: column;
-      gap: 2px;
-    }
+    .prompt.skipping { border-color: rgba(245, 166, 35, .3); }
     strong {
       color: #4ade80;
       font-size: 14px;
       line-height: 1.2;
     }
+    .skipping strong { color: rgb(245, 166, 35); }
     span {
       color: #d4d4d4;
       font-size: 12px;
       line-height: 1.3;
     }
-    button {
+    .choices {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .choice {
+      padding: 6px 10px;
+      border: 1px solid rgba(255, 255, 255, .15);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .05);
+      color: #f4f4f4;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .choice:hover:not(:disabled) {
+      border-color: #7c86ff;
+      background: rgba(97, 95, 255, .15);
+    }
+    .choice.unsure { color: #a3a3a3; }
+    .text-button {
+      align-self: flex-start;
+      border: 0;
+      padding: 2px 0;
+      background: transparent;
+      color: #a3b3ff;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .result {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .reveal {
+      flex: 1;
+      min-width: 0;
+      font-size: 13px;
+    }
+    .reveal.right { color: #4ade80; font-weight: 700; }
+    .reveal.wrong { color: #f87171; }
+    .reveal b { color: #f4f4f4; }
+    .next {
       min-height: 36px;
       border: 0;
       border-radius: 10px;
@@ -1566,9 +1725,9 @@ function getAcceptedPromptStyles() {
       font-weight: 800;
       cursor: pointer;
     }
-    button:hover {
-      filter: brightness(1.05);
-    }
+    .next.skip { background: rgba(255, 255, 255, .12); }
+    .next:hover:not(:disabled) { filter: brightness(1.05); }
+    button:disabled { opacity: .45; cursor: not-allowed; }
   `;
 }
 
@@ -1632,8 +1791,67 @@ function getProblemSlug() {
   return match ? match[1] : null;
 }
 
+function getProblemTab() {
+  const match = window.location.pathname.match(/^\/problems\/[^/]+\/([^/]+)/);
+  return match ? match[1] : null;
+}
+
 function getCurrentProblem() {
   return activeSession?.queue?.[activeSession.currentIndex] || null;
+}
+
+// Opening the editorial counts against the attempt until it's solved or the pattern
+// is named; reading it afterwards is free.
+function maybeReportSolutionView() {
+  if (
+    !isCurrentQueuedPage() ||
+    getProblemTab() !== SOLUTION_TAB ||
+    activeSession.currentSawSolution ||
+    activeSession.acceptedSlug === getCurrentProblem().slug ||
+    (activeSession.currentGuess ?? null) !== null
+  ) {
+    return;
+  }
+
+  activeSession = { ...activeSession, currentSawSolution: true };
+  void reportToSession({
+    type: "NEETCODE_SOLUTION_VIEWED",
+    slug: getCurrentProblem().slug,
+    sessionId: activeSession.id
+  });
+}
+
+// NeetCode's own Topics block names the pattern; keep it hidden until it's guessed.
+function syncTopicsDisclosure() {
+  if (isCurrentQueuedPage() && isGuessPending()) {
+    for (const summary of document.querySelectorAll("details > summary")) {
+      const details = summary.parentElement;
+      if (
+        (summary.textContent || "").trim() === TOPICS_DISCLOSURE_TITLE &&
+        !details.hasAttribute(HIDDEN_DISCLOSURE_ATTRIBUTE)
+      ) {
+        details.setAttribute(HIDDEN_DISCLOSURE_ATTRIBUTE, "");
+        details.style.display = "none";
+      }
+    }
+    return;
+  }
+
+  for (const details of document.querySelectorAll(`details[${HIDDEN_DISCLOSURE_ATTRIBUTE}]`)) {
+    details.removeAttribute(HIDDEN_DISCLOSURE_ATTRIBUTE);
+    details.style.display = "";
+  }
+}
+
+async function reportToSession(message) {
+  try {
+    const response = await chrome.runtime.sendMessage(message);
+    if (!response?.ok) {
+      console.warn(`${message.type} was not recorded:`, response?.error);
+    }
+  } catch (error) {
+    console.error(`Failed to send ${message.type}:`, error);
+  }
 }
 
 function isCurrentQueuedPage() {
