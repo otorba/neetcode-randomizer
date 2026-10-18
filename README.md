@@ -19,8 +19,9 @@ extension (MIT) to NeetCode.
 
 ## Install
 
-1. Open `chrome://extensions` and turn on Developer mode.
-2. Click **Load unpacked** and select this folder.
+1. Clone the repo: `git clone https://github.com/otorba/neetcode-randomizer.git`
+2. Open `chrome://extensions` and turn on Developer mode.
+3. Click **Load unpacked** and select the cloned `neetcode-randomizer` folder.
 
 ## Problem data
 
