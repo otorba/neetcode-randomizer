@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "NeetCode Randomizer",
+  "description": "Build NeetCode 150 or Blind 75 queues on neetcode.io. Solve one problem, then unlock the next.",
+  "version": "0.1.0",
+  "action": {
+    "default_title": "NeetCode Randomizer",
+    "default_popup": "popup.html"
+  },
+  "permissions": ["storage", "tabs"],
+  "host_permissions": ["https://neetcode.io/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://neetcode.io/problems/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  }
+}
