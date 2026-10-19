@@ -92,11 +92,12 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
 
 ## Theme
 
-Dark only, NeetCode `.dark-theme` palette: page `#202225`, card `#2f3136`, deep `#13181c`, borders
-`rgba(255,255,255,.08/.15)`, primary `#615fff` / hover `#7c86ff`, success `#48c78e` / `#4ade80`,
-difficulty easy `rgb(72,199,142)`, medium `rgb(245,166,35)`, hard `rgb(248,113,113)`. The popup uses CSS
-variables in `popup.css` `:root`; the in-page styles in `content.js` use literal colors from the
-same palette.
+Dark only, NeetCode's dark palette as sampled from a neetcode.io/roadmap screenshot (2026-10-19):
+page `#1d1c1e` (flat, no glow), card `#262527`, inset boxes `#232123`, buttons / selects `#292929`,
+deep overlay `#131214`, borders `rgba(255,255,255,.08/.15)`, roadmap node `#4c517f` (chips), primary
+`#615fff` / hover `#7c86ff`, success `#00bc7d` / `#00a26e`, difficulty easy `#009f6c`, medium
+`#d28200`, hard `#d12d34`. `theme.css` holds them as variables for the popup and progress page; the
+in-page styles in `content.js` use literal colors from the same palette.
 
 ## Verifying changes
 

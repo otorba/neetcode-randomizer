@@ -1,15 +1,11 @@
 /* Shared by popup.css and progress.css. */
 :root {
-  /* NeetCode dark theme (neetcode.io .dark-theme) */
+  /* NeetCode dark theme, sampled from neetcode.io/roadmap (2026-10-19) */
   color-scheme: dark;
-  --bg: #202225;
-  --bg-accent: radial-gradient(
-    120% 80% at 0% 0%,
-    rgba(97, 95, 255, 0.12) 0%,
-    transparent 55%
-  );
-  --panel: #2f3136;
-  --panel-solid: #2f3136;
+  --bg: #1d1c1e;
+  --bg-accent: none;
+  --panel: #262527;
+  --panel-solid: #262527;
   --panel-border: rgba(255, 255, 255, 0.08);
   --text: #f4f4f4;
   --muted: #a3a3a3;
@@ -17,23 +13,23 @@
   --accent-hover: #7c86ff;
   --accent-soft: rgba(97, 95, 255, 0.15);
   --accent-ring: rgba(97, 95, 255, 0.35);
-  --secondary-bg: #26282c;
+  --secondary-bg: #292929;
   --secondary-border: rgba(255, 255, 255, 0.15);
   --secondary-text: #d4d4d4;
-  --input-bg: #26282c;
-  --input-hover: #36383d;
-  --chip-bg: rgba(97, 95, 255, 0.15);
-  --chip-text: #a3b3ff;
-  --card-bg: linear-gradient(180deg, #2f3136 0%, #2a2c30 100%);
-  --empty-bg: #26282c;
+  --input-bg: #232123;
+  --input-hover: #2e2d30;
+  --chip-bg: #4c517f;
+  --chip-text: #f4f4f4;
+  --card-bg: linear-gradient(180deg, #262527 0%, #232123 100%);
+  --empty-bg: #232123;
   --shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
   --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.25);
-  --easy: rgb(72, 199, 142);
-  --easy-bg: rgba(72, 199, 142, 0.15);
-  --medium: rgb(245, 166, 35);
-  --medium-bg: rgba(245, 166, 35, 0.15);
-  --hard: rgb(248, 113, 113);
-  --hard-bg: rgba(248, 113, 113, 0.15);
+  --easy: #009f6c;
+  --easy-bg: rgba(0, 159, 108, 0.15);
+  --medium: #d28200;
+  --medium-bg: rgba(210, 130, 0, 0.15);
+  --hard: #d12d34;
+  --hard-bg: rgba(209, 45, 52, 0.15);
   --radius-sm: 10px;
   --radius-md: 14px;
   --radius-lg: 18px;

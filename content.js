@@ -939,7 +939,7 @@ function getCelebrationStyles() {
     .backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(19, 24, 28, .72);
+      background: rgba(19, 18, 20, .72);
       backdrop-filter: blur(4px);
     }
     .card {
@@ -955,7 +955,7 @@ function getCelebrationStyles() {
       padding: 24px;
       border: 1px solid rgba(255, 255, 255, .16);
       border-radius: 20px;
-      background: linear-gradient(180deg, rgba(32, 34, 37, .98), rgba(32, 34, 37, .94));
+      background: linear-gradient(180deg, rgba(29, 28, 30, .98), rgba(29, 28, 30, .94));
       color: #f4f4f4;
       font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       box-shadow: 0 24px 80px rgba(0, 0, 0, .45);
@@ -1003,7 +1003,7 @@ function getCelebrationStyles() {
     .stat {
       padding: 14px 16px;
       border-radius: 14px;
-      background: rgba(47, 49, 54, .72);
+      background: rgba(38, 37, 39, .72);
       border: 1px solid rgba(255, 255, 255, .11);
     }
     .stat .label {
@@ -1053,7 +1053,7 @@ function getCelebrationStyles() {
       gap: 10px;
       padding: 10px 12px;
       border-radius: 12px;
-      background: rgba(47, 49, 54, .55);
+      background: rgba(38, 37, 39, .55);
       border: 1px solid rgba(255, 255, 255, .08);
     }
     .question-row .index {
@@ -1089,12 +1089,12 @@ function getCelebrationStyles() {
       white-space: nowrap;
     }
     .question-row.completed .outcome-badge {
-      background: rgba(72, 199, 142, .16);
-      color: #4ade80;
+      background: rgba(0, 188, 125, .16);
+      color: #00bc7d;
     }
     .question-row.skipped .outcome-badge {
-      background: rgba(245, 166, 35, .14);
-      color: #f5a623;
+      background: rgba(210, 130, 0, .14);
+      color: #d28200;
     }
     .time {
       font-size: 14px;
@@ -1106,7 +1106,7 @@ function getCelebrationStyles() {
     .empty {
       padding: 16px;
       border-radius: 12px;
-      background: rgba(47, 49, 54, .55);
+      background: rgba(38, 37, 39, .55);
       color: #a3a3a3;
       font-size: 14px;
       text-align: center;
@@ -1435,13 +1435,13 @@ function getSidebarStyles() {
       border: 1px solid rgba(255, 255, 255, .15);
       border-right: 0;
       border-radius: 14px 0 0 14px;
-      background: rgba(32, 34, 37, .96);
+      background: rgba(29, 28, 30, .96);
       color: #f4f4f4;
       box-shadow: -8px 0 24px rgba(0, 0, 0, .22);
       cursor: pointer;
       transition: background-color .15s ease, transform .15s ease;
     }
-    .toggle-tab:hover { background: rgba(47, 49, 54, .98); }
+    .toggle-tab:hover { background: rgba(38, 37, 39, .98); }
     .chevron {
       font-size: 18px;
       line-height: 1;
@@ -1468,7 +1468,7 @@ function getSidebarStyles() {
       overflow-y: auto;
       padding: 18px 16px 24px;
       border-left: 1px solid rgba(255, 255, 255, .12);
-      background: rgba(32, 34, 37, .96);
+      background: rgba(29, 28, 30, .96);
       color: #f4f4f4;
       box-shadow: -12px 0 40px rgba(0, 0, 0, .28);
       backdrop-filter: blur(18px);
@@ -1512,7 +1512,7 @@ function getSidebarStyles() {
       font-size: 10px;
       font-weight: 700;
     }
-    .state.accepted { background: rgba(72, 199, 142, .16); color: #4ade80; }
+    .state.accepted { background: rgba(0, 188, 125, .16); color: #00bc7d; }
     .timers {
       justify-content: space-between;
       gap: 8px;
@@ -1590,7 +1590,7 @@ function getSidebarStyles() {
       color: #a3b3ff;
       font-size: 11px;
     }
-    .notice.success { background: rgba(72, 199, 142, .12); color: #4ade80; }
+    .notice.success { background: rgba(0, 188, 125, .12); color: #00bc7d; }
     .primary-actions { gap: 8px; margin-top: 12px; }
     .button {
       flex: 1;
@@ -1616,7 +1616,7 @@ function getSidebarStyles() {
       font-weight: 600;
       cursor: pointer;
     }
-    .text-button.danger { color: #f87171; }
+    .text-button.danger { color: #d12d34; }
     .shortcut-hint {
       margin: 10px 0 0;
       color: #737373;
@@ -1636,21 +1636,21 @@ function getOutcomePromptStyles() {
       gap: 8px;
       width: min(560px, calc(100vw - 32px));
       padding: 12px 14px;
-      border: 1px solid rgba(72, 199, 142, .25);
+      border: 1px solid rgba(0, 188, 125, .25);
       border-radius: 16px;
-      background: rgba(32, 34, 37, .96);
+      background: rgba(29, 28, 30, .96);
       color: #f4f4f4;
       box-shadow: 0 18px 45px rgba(0, 0, 0, .35);
       backdrop-filter: blur(18px);
       font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
-    .prompt.skipping { border-color: rgba(245, 166, 35, .3); }
+    .prompt.skipping { border-color: rgba(210, 130, 0, .3); }
     strong {
-      color: #4ade80;
+      color: #00bc7d;
       font-size: 14px;
       line-height: 1.2;
     }
-    .skipping strong { color: rgb(245, 166, 35); }
+    .skipping strong { color: #d28200; }
     span {
       color: #d4d4d4;
       font-size: 12px;
@@ -1697,15 +1697,15 @@ function getOutcomePromptStyles() {
       min-width: 0;
       font-size: 13px;
     }
-    .reveal.right { color: #4ade80; font-weight: 700; }
-    .reveal.wrong { color: #f87171; }
+    .reveal.right { color: #00bc7d; font-weight: 700; }
+    .reveal.wrong { color: #d12d34; }
     .reveal b { color: #f4f4f4; }
     .next {
       min-height: 36px;
       border: 0;
       border-radius: 10px;
       padding: 0 14px;
-      background: linear-gradient(135deg, #48c78e, #3ab07c);
+      background: linear-gradient(135deg, #00bc7d, #00a26e);
       color: #ffffff;
       font: inherit;
       font-size: 13px;
@@ -1732,7 +1732,7 @@ function getHeaderTimerStyles() {
       padding: 6px 12px;
       border: 1px solid rgba(255, 255, 255, .13);
       border-radius: 999px;
-      background: rgba(32, 34, 37, .92);
+      background: rgba(29, 28, 30, .92);
       color: #f4f4f4;
       box-shadow: 0 8px 24px rgba(0, 0, 0, .22);
       backdrop-filter: blur(14px);
