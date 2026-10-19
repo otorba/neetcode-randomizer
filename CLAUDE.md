@@ -98,7 +98,7 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
 
 Dark only, NeetCode's dark palette as sampled from a neetcode.io/roadmap screenshot (2026-10-19):
 page `#1d1c1e` (flat, no glow), card `#262527`, inset boxes `#232123`, buttons / selects `#292929`,
-deep overlay `#131214`, borders `rgba(255,255,255,.08/.15)`, roadmap node `#4c517f` (chips), primary
+deep overlay `#131214`, borders `rgba(255,255,255,.08/.15)`, roadmap node `#4c517f` (popup chips), primary
 `#615fff` / hover `#7c86ff`, success `#00bc7d` / `#00a26e`, difficulty easy `#009f6c`, medium
 `#d28200`, hard `#d12d34`. `theme.css` holds them as variables for the popup and progress page; the
 in-page styles in `content.js` use literal colors from the same palette.

@@ -23,6 +23,8 @@ extension (MIT) to NeetCode.
 - In-page session sidebar (`Alt+Shift+H` to expand/collapse): session and problem timers, progress,
   Next, Skip, Pause, Regenerate question, End session.
 - Session and problem timers in the problem navbar.
+- While a session runs, the toolbar popup shows its progress and a button back to the session tab
+  instead of the setup form.
 - Optional auto-reset of the editor to the starter code when a queued problem opens.
 - Summary screen with time per question when the queue is finished.
 - Dark theme matching the neetcode.io palette.
