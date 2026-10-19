@@ -9,9 +9,13 @@ const DEFAULT_SETTINGS = {
   problemList: DEFAULT_PROBLEM_LIST
 };
 
+const NEETCODE_PROBLEM_TABS = "https://neetcode.io/problems/*";
+
 const state = {
   problems: [],
-  settings: { ...DEFAULT_SETTINGS }
+  settings: { ...DEFAULT_SETTINGS },
+  session: null,
+  sessionTimerId: null
 };
 
 const elements = {
@@ -26,13 +30,17 @@ const elements = {
   includePro: document.getElementById("include-pro"),
   includeProOption: document.getElementById("include-pro-option"),
   startButton: document.getElementById("generate-button"),
-  progressButton: document.getElementById("progress-button")
+  progressButton: document.getElementById("progress-button"),
+  sessionView: document.getElementById("session-view")
 };
 
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
   bindEvents();
+
+  const stored = await chrome.storage.local.get(SESSION_STORAGE_KEY);
+  renderSession(stored[SESSION_STORAGE_KEY] || null);
 
   try {
     state.problems = await loadProblems();
@@ -49,6 +57,21 @@ async function init() {
 }
 
 function bindEvents() {
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === "local" && changes[SESSION_STORAGE_KEY]) {
+      renderSession(changes[SESSION_STORAGE_KEY].newValue || null);
+    }
+  });
+
+  elements.sessionView.addEventListener("click", (event) => {
+    const action = event.target.closest("[data-action]")?.dataset.action;
+    if (action === "go-to-session") {
+      void goToSession();
+    } else if (action === "end-session") {
+      void endSession();
+    }
+  });
+
   elements.progressButton.addEventListener("click", async () => {
     await chrome.tabs.create({ url: chrome.runtime.getURL("progress.html") });
     window.close();
@@ -378,6 +401,156 @@ function getPatternChoices(filters) {
     ? filters.topics
     : Array.from(new Set(state.problems.flatMap((problem) => problem.topics)));
   return topics.length > 1 ? [...topics].sort((a, b) => a.localeCompare(b)) : [];
+}
+
+// While a session is active the popup shows it instead of the setup form.
+function renderSession(session) {
+  state.session = session;
+  elements.form.hidden = Boolean(session);
+  elements.sessionView.hidden = !session;
+  clearInterval(state.sessionTimerId);
+  state.sessionTimerId = null;
+
+  if (!session) {
+    elements.sessionView.replaceChildren();
+    return;
+  }
+
+  const total = getSessionSize(session);
+  const isComplete = isSessionComplete(session);
+  const position = Math.min(session.currentIndex + 1, total);
+  const progress = total ? Math.min((session.currentIndex / total) * 100, 100) : 0;
+  const problem = getSessionTabProblem(session);
+  const solved = session.completedSlugs.length;
+  const skipped = session.skippedSlugs?.length || 0;
+
+  // The topic stays off this screen: in adaptive sessions it's what the guess is about.
+  elements.sessionView.innerHTML = `
+    <div class="session-head">
+      <div>
+        <p class="eyebrow">${isComplete ? "Session complete" : session.isPaused ? "Session paused" : "Session in progress"}</p>
+        <h2>${escapeHtml(getSessionTitle(session))}</h2>
+      </div>
+      <strong id="session-timer" class="session-timer">${formatElapsed(getSessionElapsed(session))}</strong>
+    </div>
+
+    <div class="session-progress-row">
+      <span>${isComplete ? `${total} of ${total} done` : `Problem ${position} of ${total}`}</span>
+      <span>${Math.round(progress)}%</span>
+    </div>
+    <div class="session-track" aria-hidden="true"><span style="width: ${progress}%"></span></div>
+
+    <div class="session-problem">
+      <p class="session-label">${isComplete ? "Last problem" : "Current problem"}</p>
+      <div class="result-top">
+        <strong>${escapeHtml(problem.title)}</strong>
+        <span class="pill ${escapeHtml(problem.difficulty.toLowerCase())}">${escapeHtml(problem.difficulty)}</span>
+      </div>
+    </div>
+
+    <div class="session-stats">
+      <span><strong>${solved}</strong>Solved</span>
+      <span><strong>${skipped}</strong>Skipped</span>
+      <span><strong>${Math.max(total - session.currentIndex, 0)}</strong>Left</span>
+    </div>
+
+    <div class="session-actions">
+      <button type="button" id="go-to-session-button" class="button primary" data-action="go-to-session">
+        Go to session tab
+      </button>
+      <button type="button" class="button ${isComplete ? "secondary" : "secondary danger"}" data-action="end-session">
+        ${isComplete ? "Start new session" : "End session"}
+      </button>
+    </div>
+    <p id="session-status" class="status-message" aria-live="polite"></p>
+  `;
+
+  if (!isComplete && !session.isPaused) {
+    state.sessionTimerId = setInterval(() => {
+      const timer = document.getElementById("session-timer");
+      if (timer) {
+        timer.textContent = formatElapsed(getSessionElapsed(state.session));
+      }
+    }, 1000);
+  }
+
+  void syncGoToSessionLabel(session);
+}
+
+function getSessionTitle(session) {
+  const listLabel = getProblemListLabel(session.filters.problemList);
+  if (session.adaptive) {
+    return `${listLabel} · Adaptive`;
+  }
+
+  const topics = session.filters.topics || [];
+  if (topics.length === 1) {
+    return `${listLabel} · ${topics[0]}`;
+  }
+
+  return topics.length ? `${listLabel} · ${topics.length} topics` : listLabel;
+}
+
+// The problem the session tab shows: the current one, or the last one once the session
+// is complete (its tab holds the summary screen).
+function getSessionTabProblem(session) {
+  return session.queue[Math.min(session.currentIndex, session.queue.length - 1)];
+}
+
+async function findSessionTab(session) {
+  const slug = getSessionTabProblem(session).slug;
+  const tabs = await chrome.tabs.query({ url: NEETCODE_PROBLEM_TABS });
+  const matching = tabs.filter(
+    (tab) => getProblemSlugFromPath(new URL(tab.url).pathname) === slug
+  );
+  return matching.find((tab) => tab.active) || matching[0] || null;
+}
+
+async function syncGoToSessionLabel(session) {
+  const tab = await findSessionTab(session);
+  const button = document.getElementById("go-to-session-button");
+  if (!tab && button && state.session === session) {
+    button.textContent = isSessionComplete(session)
+      ? "Open session summary"
+      : "Open current problem";
+  }
+}
+
+async function goToSession() {
+  const session = state.session;
+  const tab = await findSessionTab(session);
+
+  if (tab) {
+    await chrome.tabs.update(tab.id, { active: true });
+    await chrome.windows.update(tab.windowId, { focused: true });
+  } else if (isSessionComplete(session)) {
+    await chrome.tabs.create({ url: getSessionTabProblem(session).url });
+  } else {
+    const response = await chrome.runtime.sendMessage({ type: "OPEN_CURRENT_PROBLEM" });
+    if (!response?.ok) {
+      setSessionStatus(response?.error || "Could not open the current problem.");
+      return;
+    }
+  }
+
+  window.close();
+}
+
+async function endSession() {
+  const response = await chrome.runtime.sendMessage({
+    type: "END_SESSION",
+    sessionId: state.session.id
+  });
+  if (!response?.ok) {
+    setSessionStatus(response?.error || "Could not end the session.");
+  }
+}
+
+function setSessionStatus(message) {
+  const status = document.getElementById("session-status");
+  if (status) {
+    status.textContent = message;
+  }
 }
 
 function setStatusMessage(message) {

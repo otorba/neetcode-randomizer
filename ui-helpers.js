@@ -1,4 +1,4 @@
-// Shared by content.js (listed before it in the manifest) and progress.js.
+// Shared by content.js (listed before it in the manifest), popup.js and progress.js.
 
 function escapeHtml(value) {
   return String(value)
@@ -20,4 +20,32 @@ function formatElapsed(milliseconds) {
   }
 
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+// Adaptive sessions pick each problem when it's reached, so the queue can be shorter
+// than the session. Sessions stored before that have no `size`.
+function getSessionSize(session) {
+  return session.size ?? session.queue.length;
+}
+
+function isSessionComplete(session) {
+  return Boolean(session) && session.currentIndex >= getSessionSize(session);
+}
+
+// The session clock stops while paused and once the session is complete.
+function getSessionClockTime(session) {
+  return session?.completedAt || session?.pausedAt || Date.now();
+}
+
+function getSessionElapsed(session) {
+  const endTime = getSessionClockTime(session);
+  return Math.max(
+    0,
+    endTime - (session?.startedAt || endTime) - (session?.totalPausedMs || 0)
+  );
+}
+
+function getProblemSlugFromPath(pathname) {
+  const match = pathname.match(/^\/problems\/([^/]+)/);
+  return match ? match[1] : null;
 }

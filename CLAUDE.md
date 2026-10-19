@@ -8,12 +8,16 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
 
 - `popup.html` / `popup.js` / `popup.css`: session setup (list, count 1-10, topic, difficulty, auto-reset).
   Writes the `activeSession` and `settings` keys in `chrome.storage.local`. "All topics" starts an
-  adaptive session: the popup picks only the first problem.
+  adaptive session: the popup picks only the first problem. While `activeSession` exists the popup
+  shows it instead (progress, session timer, the current problem's title and difficulty but never
+  its topic) with "Go to session tab" (focuses the tab on the current problem, or sends
+  `OPEN_CURRENT_PROBLEM`) and "End session" (`END_SESSION`).
 - `theme.css`: the palette variables, shared by `popup.css` and `progress.css`.
 - `progress.html` / `progress.js` / `progress.css`: per-pattern mastery, mix-ups, recent attempts,
   export / import (merge) / clear of the history. Writes `attemptHistory` directly.
-- `ui-helpers.js`: `escapeHtml`, `formatElapsed`; loaded before `content.js` (manifest) and by the
-  progress page.
+- `ui-helpers.js`: `escapeHtml`, `formatElapsed`, the session clock and size (`getSessionElapsed`,
+  `getSessionSize`, `isSessionComplete`) and `getProblemSlugFromPath`; loaded before `content.js`
+  (manifest) and by the popup and progress page.
 - `data/recommender.js`: `scoreAttempt`, `getTopicStats` (per-topic Beta belief), `getReviewSchedule`,
   `pickAdaptiveProblem`. Classic script shared by popup, background and progress page; the tuning
   constants are at the top.

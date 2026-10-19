@@ -184,7 +184,7 @@ function startUrlWatching() {
 }
 
 function startTimerUpdates() {
-  if (timerIntervalId || isSessionComplete()) {
+  if (timerIntervalId || isSessionComplete(activeSession)) {
     return;
   }
 
@@ -217,20 +217,6 @@ function syncTimerState() {
   }
 
   startTimerUpdates();
-}
-
-function isSessionComplete(session = activeSession) {
-  if (!session) {
-    return false;
-  }
-
-  return session.currentIndex >= getSessionSize(session);
-}
-
-// Adaptive sessions pick each problem when it's reached, so the queue can be shorter
-// than the session. Sessions stored before that have no `size`.
-function getSessionSize(session = activeSession) {
-  return session.size ?? session.queue.length;
 }
 
 function isGuessPending(session = activeSession) {
@@ -494,7 +480,7 @@ function renderSessionSidebar() {
   ensureSidebarHost();
 
   const shadow = sidebarHost.shadowRoot;
-  const total = getSessionSize();
+  const total = getSessionSize(activeSession);
   const currentProblem = getCurrentProblem();
   const isComplete = activeSession.currentIndex >= total;
   const isAccepted =
@@ -539,7 +525,7 @@ function renderSessionSidebar() {
         <div class="timers">
           <div class="timer">
             <span class="timer-label">Session</span>
-            <strong id="lr-session-timer">${formatElapsed(getSessionElapsed())}</strong>
+            <strong id="lr-session-timer">${formatElapsed(getSessionElapsed(activeSession))}</strong>
           </div>
           <div class="timer">
             <span class="timer-label">Problem</span>
@@ -673,7 +659,7 @@ async function toggleSidebarExpanded(nextExpanded = !sidebarPrefs.expanded) {
 // submit, or after a guess made while skipping (so a reload keeps the reveal).
 function syncOutcomePrompt() {
   const currentProblem = getCurrentProblem();
-  if (!currentProblem || isSessionComplete()) {
+  if (!currentProblem || isSessionComplete(activeSession)) {
     removeOutcomePrompt();
     return;
   }
@@ -815,7 +801,7 @@ function removeOutcomePrompt() {
 
 function getCelebrationStats() {
   const times = activeSession?.questionTimes || [];
-  const totalMs = getSessionElapsed();
+  const totalMs = getSessionElapsed(activeSession);
   const recordedTotal = times.reduce((sum, entry) => sum + entry.elapsedMs, 0);
   const averageMs = times.length ? Math.round(recordedTotal / times.length) : 0;
 
@@ -1141,7 +1127,7 @@ function renderHeaderTimer() {
   ensureHeaderTimerHost();
   mountHeaderTimer();
 
-  const total = getSessionSize();
+  const total = getSessionSize(activeSession);
   const isComplete = activeSession.currentIndex >= total;
   const position = isComplete
     ? `${total}/${total}`
@@ -1154,7 +1140,7 @@ function renderHeaderTimer() {
       <span class="divider" aria-hidden="true"></span>
       <span class="timer">
         <span class="label">Session</span>
-        <strong id="lr-header-session-timer">${formatElapsed(getSessionElapsed())}</strong>
+        <strong id="lr-header-session-timer">${formatElapsed(getSessionElapsed(activeSession))}</strong>
       </span>
       <span class="divider" aria-hidden="true"></span>
       <span class="timer">
@@ -1246,7 +1232,7 @@ function updateTimerDisplay() {
     renderHeaderTimer();
   }
 
-  const sessionText = formatElapsed(getSessionElapsed());
+  const sessionText = formatElapsed(getSessionElapsed(activeSession));
   const problemText = formatElapsed(getProblemElapsed());
 
   if (sidebarHost?.shadowRoot) {
@@ -1263,7 +1249,7 @@ function updateTimerDisplay() {
     }
 
     if (progressTab) {
-      const total = getSessionSize();
+      const total = getSessionSize(activeSession);
       const isComplete = activeSession.currentIndex >= total;
       progressTab.textContent = isComplete
         ? `${total}/${total}`
@@ -1289,31 +1275,12 @@ function updateTimerDisplay() {
   }
 }
 
-function getSessionElapsed() {
-  const endTime = getTimerEndTime();
-  const activeElapsed =
-    endTime - (activeSession?.startedAt || endTime) - getTotalPausedMs();
-  return Math.max(0, activeElapsed);
-}
-
 function getProblemElapsed() {
-  const endTime = getTimerEndTime();
+  const endTime = getSessionClockTime(activeSession);
   const startedAt =
     activeSession?.currentProblemStartedAt || activeSession?.startedAt || endTime;
   const activeElapsed = endTime - startedAt - getCurrentProblemPausedMs();
   return Math.max(0, activeElapsed);
-}
-
-function getTimerEndTime() {
-  if (!activeSession) {
-    return Date.now();
-  }
-
-  return activeSession.completedAt || activeSession.pausedAt || Date.now();
-}
-
-function getTotalPausedMs() {
-  return activeSession?.totalPausedMs || 0;
 }
 
 function getCurrentProblemPausedMs() {
@@ -1774,8 +1741,7 @@ function getHeaderTimerStyles() {
 }
 
 function getProblemSlug() {
-  const match = window.location.pathname.match(/^\/problems\/([^/]+)/);
-  return match ? match[1] : null;
+  return getProblemSlugFromPath(window.location.pathname);
 }
 
 function getProblemTab() {
