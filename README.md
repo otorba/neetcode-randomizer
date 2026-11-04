@@ -16,8 +16,11 @@ extension (MIT) to NeetCode.
   larger list. A fifth of the picks stays plain random, so the next topic is never predictable.
 - The topic is never shown up front (NeetCode's own Topics block is hidden too). After Accepted
   or Skip you name the pattern, then see what it was.
-- Progress page (popup -> Progress): mastery per pattern, mix-ups between patterns, recent
-  attempts, export / import / clear of the history.
+- Each attempt records how much help you used before solving: none, a hint or the solution.
+  Hints, NeetBot and the editorial are picked up on the page; after Accepted you add help from
+  anywhere else. A hinted solve counts for less and comes back for one review.
+- Progress page (popup -> Progress): mastery per pattern, solo solves (no help at all), mix-ups
+  between patterns, recent attempts, export / import / clear of the history.
 - Problems open on `neetcode.io/problems/<slug>`. Next unlocks only after an accepted **Submit**
   (a passing Run does not count).
 - In-page session sidebar (`Alt+Shift+H` to expand/collapse): session and problem timers, progress,

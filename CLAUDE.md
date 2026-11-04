@@ -16,23 +16,24 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
 - `progress.html` / `progress.js` / `progress.css`: per-pattern mastery, mix-ups, recent attempts,
   export / import (merge) / clear of the history. Writes `attemptHistory` directly.
 - `ui-helpers.js`: `escapeHtml`, `formatElapsed`, the session clock and size (`getSessionElapsed`,
-  `getSessionSize`, `isSessionComplete`) and `getProblemSlugFromPath`; loaded before `content.js`
-  (manifest) and by the popup and progress page.
+  `getSessionSize`, `isSessionComplete`), `getProblemSlugFromPath` and `HELP_LEVELS` /
+  `maxHelpLevel`; loaded before `content.js` (manifest), by the popup and progress page, and by
+  the background (`importScripts`), so nothing in it may touch the DOM at load time.
 - `data/recommender.js`: `scoreAttempt`, `getTopicStats` (per-topic Beta belief), `getReviewSchedule`,
   `pickAdaptiveProblem`. Classic script shared by popup, background and progress page; the tuning
   constants are at the top.
 - `background.js`: the session state machine. All session mutations go through its message handlers
   (`OPEN_CURRENT_PROBLEM`, `NEETCODE_PROBLEM_ACCEPTED`, `NEETCODE_SUBMISSION_REJECTED`,
-  `NEETCODE_SOLUTION_VIEWED`, `RECORD_PATTERN_GUESS`, `ADVANCE_TO_NEXT_PROBLEM`, `SKIP_CURRENT_PROBLEM`,
-  `TOGGLE_SESSION_PAUSE`, `REGENERATE_CURRENT_QUESTION`, `END_SESSION`). The content script never
+  `NEETCODE_HELP_USED`, `RECORD_OUTSIDE_HELP`, `RECORD_PATTERN_GUESS`, `ADVANCE_TO_NEXT_PROBLEM`,
+  `SKIP_CURRENT_PROBLEM`, `TOGGLE_SESSION_PAUSE`, `REGENERATE_CURRENT_QUESTION`, `END_SESSION`). The content script never
   writes the session directly. It also appends one attempt per finished or rerolled problem to
   `attemptHistory`, and in adaptive sessions picks the next problem when it's reached
   (`session.size` is the session length, `queue` only what was picked so far).
 - `content.js`: everything on the problem page. Shadow-DOM hosts for the sidebar, header timer,
   accepted prompt and summary screen, each with its own `get*Styles()` function. The NeetCode-specific
   hooks are the constants at the top (`SUBMIT_BUTTON_SELECTOR`, `RESULT_SELECTOR`, `RESET_*`,
-  `EDITOR_SELECTOR`) plus `getChangedSubmissionStatus`, `scheduleEditorReset`, `findResetConfirmButton`
-  and `findPageHeaderAnchor`. Everything else is site-agnostic.
+  `EDITOR_SELECTOR`, the `HINT_*` / `NEETBOT_*` help hooks) plus `getChangedSubmissionStatus`,
+  `scheduleEditorReset`, `findResetConfirmButton` and `findPageHeaderAnchor`. Everything else is site-agnostic.
 - `data/problem-lists.js`: the list registry (`PROBLEM_LISTS`), `getProblemsForList`,
   `filterProblems` and `shuffle`, shared by popup and background (`importScripts`, so it stays a
   classic script).
@@ -49,6 +50,12 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
 - Avoid hard rules in picking (never-repeat, fixed rotations): they make the next topic deducible.
   Keep the soft recency penalty, the 3x need cap and the random share.
 - Cleanly solved problems never come back; only weak attempts are rescheduled.
+- Help levels (`HELP_LEVELS` in `ui-helpers.js`): `none` < `hint` < `solution`. Detected help
+  (`session.currentHelp`: Hint button, NeetBot, hint panel items, the solution tab) only goes up
+  and counts only before Accepted and before the guess. The user's own report
+  (`currentOutsideHelp`, the picker in the accepted prompt) can't go below it. The attempt stores
+  the higher of the two as `help`; older attempts carry `sawSolution`, read via `getAttemptHelp`.
+  A hint caps the score at 0.6, just under `STRONG_ATTEMPT_SCORE`, so the problem returns once.
 - Single-topic sessions ask no guess, so their attempts get at most 0.6 mastery credit
   (`KNOWN_TOPIC_MAX_SCORE`); the review schedule scores them uncapped.
 
@@ -79,6 +86,10 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
 
 - Angular SPA. Routes: `/problems/:problemId[/:tab[/:postId]]`. The problem page is lazy chunk 7326.
   `curl` returns the same shell for valid and bogus slugs, so links can't be checked by fetch.
+- Hints: `button.status-hint-btn` ("Get hints based on your code") is the only `requestHints()`
+  trigger; it opens `app-hint-content` with Hint 1 expanded. Items are `.hint-item-header` with a
+  `.hint-label` of "Hint 1".."Hint 3" or "Solution". NeetBot: `button.status-neetbot-btn` and the
+  editor's `.ask-neetbot-action`.
 - Submit: `app-code-actions .submit-btn`. Its text is `Submitting...` while judging; that is the only
   pending signal, the result panel is not cleared.
 - Verdict: `app-output-tab p.submission-result-accepted` or `.submission-result-wrong`; text is
