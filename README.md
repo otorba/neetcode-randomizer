@@ -17,7 +17,7 @@ extension (MIT) to NeetCode.
 - The topic is never shown up front (NeetCode's own Topics block is hidden too). After Accepted
   or Skip you name the pattern, then see what it was.
 - Each attempt records how much help you used before solving: none, a hint or the solution.
-  Hints, NeetBot and the editorial are picked up on the page; after Accepted you add help from
+  Hints and the editorial are picked up on the page; after Accepted you add help from
   anywhere else. A hinted solve counts for less and comes back for review.
 - Progress page (popup -> Progress): mastery per pattern, solo solves (no help at all), mix-ups
   between patterns, recent attempts, export / import / clear of the history.

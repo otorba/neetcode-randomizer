@@ -32,7 +32,7 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
 - `content.js`: everything on the problem page. Shadow-DOM hosts for the sidebar, header timer,
   accepted prompt and summary screen, each with its own `get*Styles()` function. The NeetCode-specific
   hooks are the constants at the top (`SUBMIT_BUTTON_SELECTOR`, `RESULT_SELECTOR`, `RESET_*`,
-  `EDITOR_SELECTOR`, the `HINT_*` / `NEETBOT_*` help hooks) plus `getChangedSubmissionStatus`,
+  `EDITOR_SELECTOR`, the `HINT_*` help hooks) plus `getChangedSubmissionStatus`,
   `scheduleEditorReset`, `findResetConfirmButton` and `findPageHeaderAnchor`. Everything else is site-agnostic.
 - `data/problem-lists.js`: the list registry (`PROBLEM_LISTS`), `getProblemsForList`,
   `filterProblems` and `shuffle`, shared by popup and background (`importScripts`, so it stays a
@@ -51,7 +51,8 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
   Keep the soft recency penalty, the 3x need cap and the random share.
 - Cleanly solved problems never come back; only weak attempts are rescheduled.
 - Help levels (`HELP_LEVELS` in `ui-helpers.js`): `none` < `hint` < `solution`. Detected help
-  (`session.currentHelp`: Hint button, NeetBot, hint panel items, the solution tab) only goes up
+  (`session.currentHelp`: Hint button, hint panel items, the solution tab; NeetBot is
+  deliberately untracked) only goes up
   and counts only before Accepted and before the guess. The user's own report
   (`currentOutsideHelp`, the picker in the accepted prompt) can't go below it. The attempt stores
   the higher of the two as `help`; older attempts carry `sawSolution`, read via `getAttemptHelp`.
@@ -89,8 +90,7 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
   `curl` returns the same shell for valid and bogus slugs, so links can't be checked by fetch.
 - Hints: `button.status-hint-btn` ("Get hints based on your code") is the only `requestHints()`
   trigger; it opens `app-hint-content` with Hint 1 expanded. Items are `.hint-item-header` with a
-  `.hint-label` of "Hint 1".."Hint 3" or "Solution". NeetBot: `button.status-neetbot-btn` and the
-  editor's `.ask-neetbot-action`.
+  `.hint-label` of "Hint 1".."Hint 3" or "Solution".
 - Submit: `app-code-actions .submit-btn`. Its text is `Submitting...` while judging; that is the only
   pending signal, the result panel is not cleared.
 - Verdict: `app-output-tab p.submission-result-accepted` or `.submission-result-wrong`; text is
