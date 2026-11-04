@@ -47,10 +47,13 @@ function render(history) {
   ).length;
   const guessed = scored.filter((attempt) => attempt.guess !== null);
   const named = guessed.filter((attempt) => attempt.guess === attempt.topic).length;
+  const solved = scored.filter((attempt) => attempt.outcome === "solved");
+  const solvedSolo = solved.filter((attempt) => getAttemptHelp(attempt) === "none").length;
 
   elements.summary.innerHTML = [
     ["Attempts", scored.length],
-    ["Solved", scored.filter((attempt) => attempt.outcome === "solved").length],
+    ["Solved", solved.length],
+    ["Solved solo", solved.length ? `${Math.round((solvedSolo / solved.length) * 100)}%` : "—"],
     ["Named correctly", guessed.length ? `${Math.round((named / guessed.length) * 100)}%` : "—"],
     ["Reviews due", dueCount]
   ]
@@ -75,6 +78,7 @@ function render(history) {
           </td>
           <td>${stats?.attempts ?? 0}</td>
           <td>${stats?.solved ?? 0}</td>
+          <td>${stats?.solved ? `${stats.solvedSolo}/${stats.solved}` : "—"}</td>
           <td>${stats?.guessed ? `${stats.recognized}/${stats.guessed}` : "—"}</td>
           <td>${stats ? formatAgo(now - stats.lastAt) : "never"}</td>
         </tr>
@@ -132,8 +136,11 @@ function formatAttemptMeta(attempt) {
   if (attempt.wrongSubmits) {
     parts.push(`${attempt.wrongSubmits} wrong`);
   }
-  if (attempt.sawSolution) {
-    parts.push("solution opened");
+  const help = getAttemptHelp(attempt);
+  if (help === "hint") {
+    parts.push("used a hint");
+  } else if (help === "solution") {
+    parts.push("saw the solution");
   }
 
   return parts.join(" · ");
