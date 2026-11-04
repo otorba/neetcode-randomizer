@@ -764,6 +764,7 @@ function renderOutcomePrompt() {
         ${reveal}
         <button type="button" class="next ${isAccepted ? "" : "skip"}" data-action="${isAccepted ? "next" : "skip"}" ${disabled}>${isAccepted ? "Next" : "Skip"}</button>
       </div>
+      ${isAccepted ? renderHelpPicker(disabled) : ""}
     `;
   }
 
@@ -781,6 +782,12 @@ function renderOutcomePrompt() {
     });
   }
 
+  for (const button of outcomePromptHost.shadowRoot.querySelectorAll("[data-help]")) {
+    button.addEventListener("click", () => {
+      void submitOutsideHelp(button.dataset.help);
+    });
+  }
+
   for (const button of outcomePromptHost.shadowRoot.querySelectorAll("[data-action]")) {
     button.addEventListener("click", () => {
       if (button.dataset.action === "cancel") {
@@ -791,6 +798,62 @@ function renderOutcomePrompt() {
       void handleSidebarAction(button.dataset.action);
     });
   }
+}
+
+const HELP_LABELS = { none: "None", hint: "Hint", solution: "Solution" };
+
+// Help seen on the page is fixed; the user adds help from elsewhere on top of it.
+function renderHelpPicker(disabled) {
+  const detected = activeSession.currentHelp || "none";
+  const selected = maxHelpLevel(detected, activeSession.currentOutsideHelp || "none");
+  const buttons = HELP_LEVELS.map((level) => {
+    const belowDetected = HELP_LEVELS.indexOf(level) < HELP_LEVELS.indexOf(detected);
+    return `<button type="button" class="help-option ${level === selected ? "selected" : ""}" data-help="${level}" ${belowDetected ? "disabled" : disabled}>${HELP_LABELS[level]}</button>`;
+  }).join("");
+  const note =
+    detected === "none"
+      ? "Count help from outside NeetCode too."
+      : `${HELP_LABELS[detected]} seen on the page.`;
+  return `
+    <div class="help-row">
+      <span>Help used</span>
+      <div class="help-options">${buttons}</div>
+      <span class="help-note">${note}</span>
+    </div>
+  `;
+}
+
+async function submitOutsideHelp(level) {
+  const currentProblem = getCurrentProblem();
+  if (!currentProblem || actionPending) {
+    return;
+  }
+
+  // Next waits for this, otherwise the attempt could be recorded without it.
+  actionPending = true;
+  renderOutcomePrompt();
+  try {
+    const response = await chrome.runtime.sendMessage({
+      type: "RECORD_OUTSIDE_HELP",
+      slug: currentProblem.slug,
+      sessionId: activeSession.id,
+      level
+    });
+    if (!response?.ok) {
+      throw new Error(response?.error || "Could not record the help used.");
+    }
+
+    activeSession = { ...activeSession, currentOutsideHelp: response.level };
+    overlayMessage = "";
+  } catch (error) {
+    console.error("Failed to record outside help:", error);
+    overlayMessage = error.message;
+  } finally {
+    actionPending = false;
+  }
+
+  renderOutcomePrompt();
+  renderSessionSidebar();
 }
 
 async function submitPatternGuess(guess) {
@@ -1710,6 +1773,38 @@ function getOutcomePromptStyles() {
     }
     .next.skip { background: rgba(255, 255, 255, .12); }
     .next:hover:not(:disabled) { filter: brightness(1.05); }
+    .help-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, .08);
+    }
+    .help-options {
+      display: flex;
+      border: 1px solid rgba(255, 255, 255, .15);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .help-option {
+      padding: 4px 10px;
+      border: 0;
+      background: #292929;
+      color: #d4d4d4;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .help-option + .help-option { border-left: 1px solid rgba(255, 255, 255, .08); }
+    .help-option:hover:not(:disabled) { background: rgba(97, 95, 255, .15); }
+    .help-option.selected {
+      background: #615fff;
+      color: #ffffff;
+      font-weight: 700;
+    }
+    .help-option.selected:disabled { opacity: 1; }
+    .help-note { color: #a3a3a3; font-size: 11px; }
     button:disabled { opacity: .45; cursor: not-allowed; }
   `;
 }
