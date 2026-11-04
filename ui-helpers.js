@@ -1,4 +1,12 @@
-// Shared by content.js (listed before it in the manifest), popup.js and progress.js.
+// Shared by content.js (listed before it in the manifest), popup.js, progress.js and
+// background.js (importScripts), so nothing here may touch the DOM at load time.
+
+// Least to most help on a problem; a higher level replaces a lower one.
+const HELP_LEVELS = ["none", "hint", "solution"];
+
+function maxHelpLevel(a, b) {
+  return HELP_LEVELS.indexOf(a) >= HELP_LEVELS.indexOf(b) ? a : b;
+}
 
 function escapeHtml(value) {
   return String(value)

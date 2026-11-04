@@ -1,4 +1,4 @@
-importScripts("data/problem-lists.js", "data/recommender.js");
+importScripts("ui-helpers.js", "data/problem-lists.js", "data/recommender.js");
 
 const SESSION_STORAGE_KEY = "activeSession";
 const DATA_PATH = "data/problems.json";
@@ -16,8 +16,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       skipCurrentProblem(message.slug, message.sessionId, sender.tab?.id),
     NEETCODE_SUBMISSION_REJECTED: () =>
       markSubmissionRejected(message.slug, message.sessionId),
-    NEETCODE_SOLUTION_VIEWED: () =>
-      markSolutionViewed(message.slug, message.sessionId),
+    NEETCODE_HELP_USED: () =>
+      markHelpUsed(message.slug, message.sessionId, message.level),
+    RECORD_OUTSIDE_HELP: () =>
+      recordOutsideHelp(message.slug, message.sessionId, message.level),
     RECORD_PATTERN_GUESS: () =>
       recordPatternGuess(message.slug, message.sessionId, message.guess),
     TOGGLE_SESSION_PAUSE: () => toggleSessionPause(message.sessionId),
@@ -133,18 +135,41 @@ async function markSubmissionRejected(slug, sessionId) {
   return { ok: true };
 }
 
-async function markSolutionViewed(slug, sessionId) {
+// Help seen on the page; it only ever goes up.
+async function markHelpUsed(slug, sessionId, level) {
   const session = await getSession();
   const validationError = validateCurrentProblem(session, slug, sessionId);
   if (validationError) {
     return validationError;
   }
 
-  if (!session.currentSawSolution) {
-    session.currentSawSolution = true;
+  if (level === "none" || !HELP_LEVELS.includes(level)) {
+    return { ok: false, error: "Unknown help level." };
+  }
+
+  const help = maxHelpLevel(session.currentHelp, level);
+  if (help !== session.currentHelp) {
+    session.currentHelp = help;
     await setSession(session);
   }
-  return { ok: true };
+  return { ok: true, help };
+}
+
+// Help from outside the page, as the user reports it; it can be corrected until Next.
+async function recordOutsideHelp(slug, sessionId, level) {
+  const session = await getSession();
+  const validationError = validateCurrentProblem(session, slug, sessionId);
+  if (validationError) {
+    return validationError;
+  }
+
+  if (!HELP_LEVELS.includes(level)) {
+    return { ok: false, error: "Unknown help level." };
+  }
+
+  session.currentOutsideHelp = level;
+  await setSession(session);
+  return { ok: true, level };
 }
 
 // The first guess sticks: the answer is revealed right after it.
@@ -209,7 +234,7 @@ async function recordCurrentProblemAttempt(session, outcome) {
     outcome,
     elapsedMs,
     wrongSubmits: session.currentWrongSubmits,
-    sawSolution: session.currentSawSolution,
+    help: maxHelpLevel(session.currentHelp, session.currentOutsideHelp),
     guess,
     sessionId: session.id
   });
@@ -229,7 +254,8 @@ function startCurrentProblem(session) {
   session.currentProblemStartedAt = Date.now();
   session.currentProblemPausedMs = 0;
   session.currentWrongSubmits = 0;
-  session.currentSawSolution = false;
+  session.currentHelp = "none";
+  session.currentOutsideHelp = "none";
   session.currentGuess = null;
   session.completedAt = null;
 }
@@ -458,7 +484,10 @@ async function getSession() {
   session.adaptive ??= false;
   session.patternChoices ??= [];
   session.currentWrongSubmits ??= 0;
-  session.currentSawSolution ??= false;
+  // Sessions stored before help levels carry `currentSawSolution`.
+  session.currentHelp ??= session.currentSawSolution ? "solution" : "none";
+  delete session.currentSawSolution;
+  session.currentOutsideHelp ??= "none";
   session.currentGuess ??= null;
   session.currentSolveMs ??= null;
   if (session.currentIndex >= session.size && !session.completedAt) {

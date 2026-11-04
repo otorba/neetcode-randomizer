@@ -371,7 +371,8 @@ async function startSession() {
     completedAt: null,
     questionTimes: [],
     currentWrongSubmits: 0,
-    currentSawSolution: false,
+    currentHelp: "none",
+    currentOutsideHelp: "none",
     currentGuess: null,
     currentSolveMs: null
   };

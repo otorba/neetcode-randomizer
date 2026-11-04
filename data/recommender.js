@@ -2,9 +2,11 @@
 // (importScripts) and progress.js, so keep it a classic script. Needs problem-lists.js.
 //
 // An attempt is { slug, title, topic, difficulty, endedAt, outcome, elapsedMs,
-// wrongSubmits, sawSolution, guess, sessionId }. `outcome` is "solved", "skipped" or
-// "rerolled"; `guess` is the pattern the user named, "" for "Not sure", or null when the
-// session asked for no guess (a single-topic session).
+// wrongSubmits, help, guess, sessionId }. `outcome` is "solved", "skipped" or
+// "rerolled"; `help` is the most help used before solving (HELP_LEVELS in ui-helpers.js);
+// `guess` is the pattern the user named, "" for "Not sure", or null when the session asked
+// for no guess (a single-topic session). Attempts stored before `help` carry
+// `sawSolution` instead.
 
 const HISTORY_STORAGE_KEY = "attemptHistory";
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -29,6 +31,9 @@ const STRONG_ATTEMPT_SCORE = 0.7;
 // front, so solving says nothing about recognizing it. The review schedule ignores
 // the cap, otherwise every drilled problem would come back.
 const KNOWN_TOPIC_MAX_SCORE = 0.6;
+// Score caps by help level. A hint lands just under STRONG_ATTEMPT_SCORE, so the problem
+// comes back once; it also caps recognition, since help is only counted before the guess.
+const HELP_MAX_SCORE = { hint: 0.6, solution: 0.2 };
 const TARGET_MINUTES = { Easy: 15, Medium: 25, Hard: 40 };
 // Difficulty mix within the picked topic, by that topic's mastery.
 const DIFFICULTY_MIX = [
@@ -37,8 +42,12 @@ const DIFFICULTY_MIX = [
   { below: Infinity, weights: { Easy: 0.1, Medium: 0.55, Hard: 0.35 } }
 ];
 
+function getAttemptHelp(attempt) {
+  return attempt.help ?? (attempt.sawSolution ? "solution" : "none");
+}
+
 // 0..1, how cleanly the attempt went. Naming the pattern is what the score is about;
-// solving with a wrong or missing guess keeps some credit, the solution tab caps it.
+// solving with a wrong or missing guess keeps some credit, hints and the solution cap it.
 function scoreAttempt(attempt) {
   const recognized = attempt.guess === null || attempt.guess === attempt.topic;
   if (attempt.outcome === "skipped") {
@@ -53,8 +62,9 @@ function scoreAttempt(attempt) {
   } else if (attempt.elapsedMs > targetMs) {
     score -= 0.15;
   }
-  if (attempt.sawSolution) {
-    score = Math.min(score, 0.2);
+  const help = getAttemptHelp(attempt);
+  if (help !== "none") {
+    score = Math.min(score, HELP_MAX_SCORE[help]);
   }
 
   return Math.min(Math.max(score, 0), 1);
@@ -82,6 +92,7 @@ function getTopicStats(history) {
         weight: 1,
         attempts: 0,
         solved: 0,
+        solvedSolo: 0,
         guessed: 0,
         recognized: 0,
         lastAt: attempt.endedAt
@@ -99,6 +110,9 @@ function getTopicStats(history) {
     topic.attempts += 1;
     if (attempt.outcome === "solved") {
       topic.solved += 1;
+      if (getAttemptHelp(attempt) === "none") {
+        topic.solvedSolo += 1;
+      }
     }
     if (attempt.guess !== null) {
       topic.guessed += 1;

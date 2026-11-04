@@ -20,6 +20,14 @@ const RESET_CONFIRM_DELAY_MS = 300;
 const URL_WATCH_INTERVAL_MS = 500;
 // Route /problems/:problemId/:tab; NeetCode's tab enum value for the editorial.
 const SOLUTION_TAB = "solution";
+// Help on the page. The Hint button asks for AI hints (the panel opens on Hint 1); the
+// panel's items are labelled "Hint 1".."Hint 3" and sometimes "Solution". NeetBot is the
+// AI chat, opened from the status bar or the editor's "Ask NeetBot" popup.
+const HINT_BUTTON_SELECTOR = "button.status-hint-btn";
+const HINT_ITEM_HEADER_SELECTOR = "app-hint-content .hint-item-header";
+const HINT_ITEM_LABEL_SELECTOR = ".hint-label";
+const HINT_SOLUTION_LABEL = "Solution";
+const NEETBOT_BUTTON_SELECTOR = "button.status-neetbot-btn, .ask-neetbot-action";
 // The question tab lists the problem's tags in a <details> with this summary.
 const TOPICS_DISCLOSURE_TITLE = "Topics";
 const HIDDEN_DISCLOSURE_ATTRIBUTE = "data-neetcode-randomizer-hidden";
@@ -243,6 +251,12 @@ function handleKeydown(event) {
 }
 
 function handleDocumentClick(event) {
+  const helpLevel = getHelpLevelFromClick(event);
+  if (helpLevel) {
+    reportHelpUsed(helpLevel);
+    return;
+  }
+
   const submitButton = getSubmitButtonFromEvent(event);
   if (!submitButton) {
     return;
@@ -257,6 +271,21 @@ function handleDocumentClick(event) {
   renderSessionSidebar();
   renderHeaderTimer();
   syncTimerState();
+}
+
+function getHelpLevelFromClick(event) {
+  const target = event.target;
+  if (target.closest(HINT_BUTTON_SELECTOR) || target.closest(NEETBOT_BUTTON_SELECTOR)) {
+    return "hint";
+  }
+
+  const hintItem = target.closest(HINT_ITEM_HEADER_SELECTOR);
+  if (hintItem) {
+    const label = hintItem.querySelector(HINT_ITEM_LABEL_SELECTOR)?.textContent || "";
+    return label.trim() === HINT_SOLUTION_LABEL ? "solution" : "hint";
+  }
+
+  return null;
 }
 
 function getSubmitButtonFromEvent(event) {
@@ -1753,24 +1782,34 @@ function getCurrentProblem() {
   return activeSession?.queue?.[activeSession.currentIndex] || null;
 }
 
-// Opening the editorial counts against the attempt until it's solved or the pattern
-// is named; reading it afterwards is free.
 function maybeReportSolutionView() {
+  if (getProblemTab() === SOLUTION_TAB) {
+    reportHelpUsed("solution");
+  }
+}
+
+// Hints and the editorial count against the attempt until it's solved or the pattern is
+// named; using them afterwards is free.
+function reportHelpUsed(level) {
   if (
     !isCurrentQueuedPage() ||
-    getProblemTab() !== SOLUTION_TAB ||
-    activeSession.currentSawSolution ||
     activeSession.acceptedSlug === getCurrentProblem().slug ||
     (activeSession.currentGuess ?? null) !== null
   ) {
     return;
   }
 
-  activeSession = { ...activeSession, currentSawSolution: true };
+  const currentHelp = activeSession.currentHelp || "none";
+  if (maxHelpLevel(currentHelp, level) === currentHelp) {
+    return;
+  }
+
+  activeSession = { ...activeSession, currentHelp: level };
   void reportToSession({
-    type: "NEETCODE_SOLUTION_VIEWED",
+    type: "NEETCODE_HELP_USED",
     slug: getCurrentProblem().slug,
-    sessionId: activeSession.id
+    sessionId: activeSession.id,
+    level
   });
 }
 
