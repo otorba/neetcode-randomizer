@@ -55,7 +55,8 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
   and counts only before Accepted and before the guess. The user's own report
   (`currentOutsideHelp`, the picker in the accepted prompt) can't go below it. The attempt stores
   the higher of the two as `help`; older attempts carry `sawSolution`, read via `getAttemptHelp`.
-  A hint caps the score at 0.6, just under `STRONG_ATTEMPT_SCORE`, so the problem returns once.
+  A hint caps the score at 0.6, just under `STRONG_ATTEMPT_SCORE`, so the problem enters the
+  review schedule like any weak attempt.
 - Single-topic sessions ask no guess, so their attempts get at most 0.6 mastery credit
   (`KNOWN_TOPIC_MAX_SCORE`); the review schedule scores them uncapped.
 

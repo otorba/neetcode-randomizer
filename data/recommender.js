@@ -32,7 +32,8 @@ const STRONG_ATTEMPT_SCORE = 0.7;
 // the cap, otherwise every drilled problem would come back.
 const KNOWN_TOPIC_MAX_SCORE = 0.6;
 // Score caps by help level. A hint lands just under STRONG_ATTEMPT_SCORE, so the problem
-// comes back once; it also caps recognition, since help is only counted before the guess.
+// enters the review schedule like any weak attempt. It also caps recognition, since help
+// is only counted before the guess.
 const HELP_MAX_SCORE = { hint: 0.6, solution: 0.2 };
 const TARGET_MINUTES = { Easy: 15, Medium: 25, Hard: 40 };
 // Difficulty mix within the picked topic, by that topic's mastery.
