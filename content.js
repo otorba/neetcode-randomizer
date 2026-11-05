@@ -56,6 +56,8 @@ let sidebarHost = null;
 let outcomePromptHost = null;
 // "accepted" or "skip" while the outcome prompt is open, otherwise null.
 let outcomePromptMode = null;
+// The sidebar that shows overlayMessage is usually collapsed, so the prompt shows its own failures.
+let outcomePromptError = "";
 let headerTimerHost = null;
 let celebrationHost = null;
 let celebrationSessionId = null;
@@ -773,6 +775,7 @@ function renderOutcomePrompt() {
     <section class="prompt ${isAccepted ? "accepted" : "skipping"}" aria-label="${isAccepted ? "Accepted submission" : "Skip problem"}">
       <strong>${isAccepted ? "Correct" : "Skipping"}</strong>
       ${body}
+      ${outcomePromptError ? `<span class="error" role="alert">${escapeHtml(outcomePromptError)}</span>` : ""}
     </section>
   `;
 
@@ -845,9 +848,11 @@ async function submitOutsideHelp(level) {
 
     activeSession = { ...activeSession, currentOutsideHelp: response.level };
     overlayMessage = "";
+    outcomePromptError = "";
   } catch (error) {
     console.error("Failed to record outside help:", error);
     overlayMessage = error.message;
+    outcomePromptError = error.message;
   } finally {
     actionPending = false;
   }
@@ -875,9 +880,11 @@ async function submitPatternGuess(guess) {
 
     activeSession = { ...activeSession, currentGuess: response.guess };
     overlayMessage = "";
+    outcomePromptError = "";
   } catch (error) {
     console.error("Failed to record the pattern guess:", error);
     overlayMessage = error.message;
+    outcomePromptError = error.message;
   }
 
   renderOutcomePrompt();
@@ -889,6 +896,7 @@ function removeOutcomePrompt() {
   outcomePromptHost?.remove();
   outcomePromptHost = null;
   outcomePromptMode = null;
+  outcomePromptError = "";
 }
 
 function getCelebrationStats() {
@@ -1466,6 +1474,7 @@ async function handleSidebarAction(action) {
     console.error(`Failed to ${action} session:`, error);
     actionPending = false;
     overlayMessage = error.message;
+    outcomePromptError = error.message;
     renderSessionSidebar();
     renderOutcomePrompt();
   }
@@ -1805,6 +1814,7 @@ function getOutcomePromptStyles() {
     }
     .help-option.selected:disabled { opacity: 1; }
     .help-note { color: #a3a3a3; font-size: 11px; }
+    .error { color: #d12d34; font-size: 11px; }
     button:disabled { opacity: .45; cursor: not-allowed; }
   `;
 }
