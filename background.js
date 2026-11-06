@@ -3,9 +3,18 @@ importScripts("ui-helpers.js", "data/problem-lists.js", "data/recommender.js");
 const SESSION_STORAGE_KEY = "activeSession";
 const DATA_PATH = "data/problems.json";
 
+const DEBUG_LOG_MAX_ENTRIES = 500;
+
 let cachedProblems = null;
+let debugLogWrite = Promise.resolve();
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.type === "DEBUG_LOG") {
+    appendDebugLog({ source: "page", path: message.path, event: message.event, ...message.data });
+    sendResponse({ ok: true });
+    return false;
+  }
+
   const handlers = {
     OPEN_CURRENT_PROBLEM: () => openCurrentProblem(),
     NEETCODE_PROBLEM_ACCEPTED: () =>
@@ -37,15 +46,43 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
   }
 
+  const startedAt = Date.now();
   handler()
-    .then((result) => sendResponse(result))
     .catch((error) => {
       console.error(`Failed to handle ${message.type}:`, error);
-      sendResponse({ ok: false, error: error.message });
+      return { ok: false, error: error.message };
+    })
+    .then((result) => {
+      appendDebugLog({
+        source: "background",
+        event: message.type,
+        slug: message.slug,
+        level: message.level,
+        guess: message.guess,
+        ok: result?.ok,
+        status: result?.status,
+        error: result?.error,
+        ms: Date.now() - startedAt
+      });
+      sendResponse(result);
     });
 
   return true;
 });
+
+// Appends are chained so concurrent handlers don't overwrite each other's entries.
+function appendDebugLog(entry) {
+  debugLogWrite = debugLogWrite
+    .then(async () => {
+      const stored = await chrome.storage.local.get(DEBUG_LOG_STORAGE_KEY);
+      const log = stored[DEBUG_LOG_STORAGE_KEY] || [];
+      log.push({ at: new Date().toISOString(), ...entry });
+      await chrome.storage.local.set({
+        [DEBUG_LOG_STORAGE_KEY]: log.slice(-DEBUG_LOG_MAX_ENTRIES)
+      });
+    })
+    .catch((error) => console.error("Failed to write the debug log:", error));
+}
 
 async function openCurrentProblem() {
   const session = await getSession();

@@ -10,6 +10,7 @@ const elements = {
   exportButton: document.getElementById("export-button"),
   importInput: document.getElementById("import-input"),
   clearButton: document.getElementById("clear-button"),
+  debugLogButton: document.getElementById("debug-log-button"),
   statusMessage: document.getElementById("status-message")
 };
 
@@ -21,6 +22,7 @@ async function init() {
   elements.exportButton.addEventListener("click", exportHistory);
   elements.importInput.addEventListener("change", importHistory);
   elements.clearButton.addEventListener("click", clearHistory);
+  elements.debugLogButton.addEventListener("click", exportDebugLog);
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName === "local" && changes[HISTORY_STORAGE_KEY]) {
       render(changes[HISTORY_STORAGE_KEY].newValue || []);
@@ -147,11 +149,31 @@ function formatAttemptMeta(attempt) {
 }
 
 async function exportHistory() {
-  const history = await getHistory();
-  const blob = new Blob([JSON.stringify(history, null, 2)], { type: "application/json" });
+  downloadJson("history", await getHistory());
+}
+
+// The log plus the state it acted on, so one file is enough to troubleshoot from.
+async function exportDebugLog() {
+  const stored = await chrome.storage.local.get([
+    DEBUG_LOG_STORAGE_KEY,
+    "activeSession",
+    "settings"
+  ]);
+  downloadJson("debug-log", {
+    version: chrome.runtime.getManifest().version,
+    exportedAt: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+    activeSession: stored.activeSession || null,
+    settings: stored.settings || null,
+    entries: stored[DEBUG_LOG_STORAGE_KEY] || []
+  });
+}
+
+function downloadJson(name, data) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
-  link.download = `neetcode-randomizer-history-${new Date().toISOString().slice(0, 10)}.json`;
+  link.download = `neetcode-randomizer-${name}-${new Date().toISOString().slice(0, 10)}.json`;
   link.click();
   URL.revokeObjectURL(link.href);
 }

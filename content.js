@@ -158,6 +158,7 @@ function beginSubmissionWatch() {
     }
 
     clearSubmissionWatch();
+    logDebugEvent("submission_timeout", { slug: getCurrentProblem()?.slug });
     overlayMessage = "Result detection timed out. Submit again to retry.";
     renderSessionSidebar();
     renderHeaderTimer();
@@ -269,6 +270,7 @@ function handleDocumentClick(event) {
   }
 
   beginSubmissionWatch();
+  logDebugEvent("submit_clicked", { slug: getCurrentProblem().slug });
   overlayMessage = "Checking submission result…";
   renderSessionSidebar();
   renderHeaderTimer();
@@ -304,6 +306,7 @@ async function checkForSubmissionResult() {
     return;
   }
 
+  logDebugEvent("verdict_seen", { slug: getCurrentProblem().slug, status });
   if (status !== ACCEPTED_TEXT) {
     clearSubmissionWatch();
     void reportToSession({
@@ -357,6 +360,7 @@ async function recordAcceptedAndShowPrompt() {
     openOutcomePrompt("accepted");
   } catch (error) {
     console.error("Failed to report accepted problem:", error);
+    logDebugEvent("accept_failed", { error: error.message });
     overlayMessage = error.message;
   }
 
@@ -851,6 +855,7 @@ async function submitOutsideHelp(level) {
     outcomePromptError = "";
   } catch (error) {
     console.error("Failed to record outside help:", error);
+    logDebugEvent("help_failed", { error: error.message });
     overlayMessage = error.message;
     outcomePromptError = error.message;
   } finally {
@@ -883,6 +888,7 @@ async function submitPatternGuess(guess) {
     outcomePromptError = "";
   } catch (error) {
     console.error("Failed to record the pattern guess:", error);
+    logDebugEvent("guess_failed", { error: error.message });
     overlayMessage = error.message;
     outcomePromptError = error.message;
   }
@@ -1472,6 +1478,7 @@ async function handleSidebarAction(action) {
     }
   } catch (error) {
     console.error(`Failed to ${action} session:`, error);
+    logDebugEvent("action_failed", { action, error: error.message });
     actionPending = false;
     overlayMessage = error.message;
     outcomePromptError = error.message;
@@ -1948,6 +1955,19 @@ async function reportToSession(message) {
     }
   } catch (error) {
     console.error(`Failed to send ${message.type}:`, error);
+    logDebugEvent("send_failed", { type: message.type, error: error.message });
+  }
+}
+
+// Page-side events for the debug log; the background stores them and logs every session
+// request itself. Nothing reaches the log once the extension context is gone.
+function logDebugEvent(event, data = {}) {
+  try {
+    void chrome.runtime
+      .sendMessage({ type: "DEBUG_LOG", event, path: window.location.pathname, data })
+      .catch(() => {});
+  } catch {
+    // The extension was reloaded under this tab.
   }
 }
 
@@ -2015,6 +2035,7 @@ async function scheduleEditorReset(expectedSlug) {
     }
   } catch (error) {
     console.error("Failed to auto-reset editor:", error);
+    logDebugEvent("reset_failed", { error: error.message });
   }
 }
 

@@ -14,7 +14,9 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
   `OPEN_CURRENT_PROBLEM`) and "End session" (`END_SESSION`).
 - `theme.css`: the palette variables, shared by `popup.css` and `progress.css`.
 - `progress.html` / `progress.js` / `progress.css`: per-pattern mastery, mix-ups, recent attempts,
-  export / import (merge) / clear of the history. Writes `attemptHistory` directly.
+  export / import (merge) / clear of the history. Writes `attemptHistory` directly. "Debug log"
+  downloads `neetcode-randomizer-debug-log-<date>.json`: the `debugLog` entries plus the current
+  `activeSession`, `settings` and extension version.
 - `ui-helpers.js`: `escapeHtml`, `formatElapsed`, the session clock and size (`getSessionElapsed`,
   `getSessionSize`, `isSessionComplete`), `getProblemSlugFromPath` and `HELP_LEVELS` /
   `maxHelpLevel`; loaded before `content.js` (manifest), by the popup and progress page, and by
@@ -29,6 +31,10 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
   writes the session directly. It also appends one attempt per finished or rerolled problem to
   `attemptHistory`, and in adaptive sessions picks the next problem when it's reached
   (`session.size` is the session length, `queue` only what was picked so far).
+  It is the only writer of `debugLog` (last 500 entries, appends chained so none are lost): one
+  entry per handled message with its result, plus page events the content script sends as
+  `DEBUG_LOG` (`logDebugEvent`: submit clicked, verdict seen, timeouts, failed requests). When
+  the user reports a problem, ask for that file and read it before reasoning from the code.
 - `content.js`: everything on the problem page. Shadow-DOM hosts for the sidebar, header timer,
   accepted prompt and summary screen, each with its own `get*Styles()` function. The NeetCode-specific
   hooks are the constants at the top (`SUBMIT_BUTTON_SELECTOR`, `RESULT_SELECTOR`, `RESET_*`,

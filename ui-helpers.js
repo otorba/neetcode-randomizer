@@ -2,6 +2,9 @@
 // background.js (importScripts), so nothing here may touch the DOM at load time.
 
 // Least to most help on a problem; a higher level replaces a lower one.
+// Written only by the background (one writer, no lost appends); the progress page downloads it.
+const DEBUG_LOG_STORAGE_KEY = "debugLog";
+
 const HELP_LEVELS = ["none", "hint", "solution"];
 
 function maxHelpLevel(a, b) {
