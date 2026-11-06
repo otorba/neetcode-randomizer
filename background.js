@@ -107,10 +107,11 @@ async function markProblemAccepted(slug, sessionId) {
     return validationError;
   }
 
-  // The solve time stops here; naming the pattern and reading the editorial after an
-  // accepted submit don't count against it.
+  // The solve time stops here, and the session clock stays paused until Next: naming the
+  // pattern, reading the editorial or asking an AI about the solution don't count.
   if (session.acceptedSlug !== slug) {
     session.currentSolveMs = getCurrentProblemElapsed(session);
+    pauseSessionClock(session);
   }
   session.acceptedSlug = slug;
   await setSession(session);
@@ -303,6 +304,8 @@ async function moveToNextProblem(session, status, tabId) {
     status === "skipped" ? "skipped" : "solved"
   );
 
+  // Paused since Accepted (or by hand); the next problem starts on a running clock.
+  resumeSessionClock(session);
   session.currentIndex += 1;
   session.acceptedSlug = null;
 
@@ -369,19 +372,35 @@ async function toggleSessionPause(sessionId) {
   }
 
   if (session.isPaused) {
-    const pausedDuration = Date.now() - session.pausedAt;
-    session.totalPausedMs += pausedDuration;
-    session.currentProblemPausedMs += pausedDuration;
-    session.pausedAt = null;
-    session.isPaused = false;
+    resumeSessionClock(session);
     await setSession(session);
     return { ok: true, status: "resumed" };
   }
 
-  session.pausedAt = Date.now();
-  session.isPaused = true;
+  pauseSessionClock(session);
   await setSession(session);
   return { ok: true, status: "paused" };
+}
+
+function pauseSessionClock(session) {
+  if (session.isPaused) {
+    return;
+  }
+
+  session.pausedAt = Date.now();
+  session.isPaused = true;
+}
+
+function resumeSessionClock(session) {
+  if (!session.isPaused) {
+    return;
+  }
+
+  const pausedDuration = Date.now() - session.pausedAt;
+  session.totalPausedMs += pausedDuration;
+  session.currentProblemPausedMs += pausedDuration;
+  session.pausedAt = null;
+  session.isPaused = false;
 }
 
 async function regenerateCurrentQuestion(slug, sessionId, tabId) {

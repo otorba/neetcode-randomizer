@@ -553,7 +553,7 @@ function renderSessionSidebar() {
             <h2>NeetCode Randomizer</h2>
           </div>
           <span class="state ${isAccepted ? "accepted" : ""}">
-            ${isComplete ? "Complete" : isPaused ? "Paused" : isAccepted ? "Accepted" : "In progress"}
+            ${isComplete ? "Complete" : isAccepted ? "Accepted" : isPaused ? "Paused" : "In progress"}
           </span>
         </header>
 
@@ -777,7 +777,7 @@ function renderOutcomePrompt() {
   outcomePromptHost.shadowRoot.innerHTML = `
     <style>${getOutcomePromptStyles()}</style>
     <section class="prompt ${isAccepted ? "accepted" : "skipping"}" aria-label="${isAccepted ? "Accepted submission" : "Skip problem"}">
-      <strong>${isAccepted ? "Correct" : "Skipping"}</strong>
+      <strong>${isAccepted ? "Correct" : "Skipping"}${isAccepted && isSessionPaused() ? `<span class="clock-note">Clock paused until Next</span>` : ""}</strong>
       ${body}
       ${outcomePromptError ? `<span class="error" role="alert">${escapeHtml(outcomePromptError)}</span>` : ""}
     </section>
@@ -1726,6 +1726,12 @@ function getOutcomePromptStyles() {
       line-height: 1.2;
     }
     .skipping strong { color: #d28200; }
+    .clock-note {
+      margin-left: 8px;
+      color: #a3a3a3;
+      font-size: 11px;
+      font-weight: 500;
+    }
     span {
       color: #d4d4d4;
       font-size: 12px;

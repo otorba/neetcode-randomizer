@@ -31,6 +31,9 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
   writes the session directly. It also appends one attempt per finished or rerolled problem to
   `attemptHistory`, and in adaptive sessions picks the next problem when it's reached
   (`session.size` is the session length, `queue` only what was picked so far).
+  The first Accepted pauses the session clock (`pauseSessionClock`; the solve time already
+  stopped there) and moving to the next problem always resumes it (`resumeSessionClock`), so
+  reviewing the editorial or the pattern costs no session time.
   It is the only writer of `debugLog` (last 500 entries, appends chained so none are lost): one
   entry per handled message with its result, plus page events the content script sends as
   `DEBUG_LOG` (`logDebugEvent`: submit clicked, verdict seen, timeouts, failed requests). When
