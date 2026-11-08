@@ -1476,6 +1476,9 @@ async function handleSidebarAction(action) {
       actionPending = false;
       syncTimerState();
     }
+
+    // The storage change usually lands before this response and renders the pending text.
+    renderSessionSidebar();
   } catch (error) {
     console.error(`Failed to ${action} session:`, error);
     logDebugEvent("action_failed", { action, error: error.message });
