@@ -41,7 +41,7 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
 - `content.js`: everything on the problem page. Shadow-DOM hosts for the sidebar, header timer,
   accepted prompt and summary screen, each with its own `get*Styles()` function. The NeetCode-specific
   hooks are the constants at the top (`SUBMIT_BUTTON_SELECTOR`, `RESULT_SELECTOR`, `RESET_*`,
-  `EDITOR_SELECTOR`, the `HINT_*` help hooks) plus `getChangedSubmissionStatus`,
+  `EDITOR_SELECTOR`, `PROBLEM_TITLE_SELECTOR`, the `HINT_*` help hooks) plus `getChangedSubmissionStatus`,
   `scheduleEditorReset`, `findResetConfirmButton` and `findPageHeaderAnchor`. Everything else is site-agnostic.
 - `data/problem-lists.js`: the list registry (`PROBLEM_LISTS`), `getProblemsForList`,
   `filterProblems` and `shuffle`, shared by popup and background (`importScripts`, so it stays a
@@ -110,6 +110,9 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
   It opens an `app-modal` moved to `<body>`: `.modal.dialog-open`, header "Reset Code", footer
   `.modal-card-foot` button "Reset". Reset does nothing until the editor is ready, hence the wait for
   `.monaco-editor`.
+- Title: `h1.problem-title` on the question tab, text is `problemConfig.name`. It often differs from
+  the bundle list's `problem` (old LeetCode names: "Walls And Gates" vs "Islands and Treasure"), so
+  the sidebar shows the page heading for the current problem; everything else uses `title`.
 - Bare `<header>` tags on the problem page belong to modals. The navbar is `app-problem-navbar .my-navbar`
   (host has `overflow-x: hidden`).
 - To re-discover hooks: fetch `https://neetcode.io/practice`, take `runtime.<hash>.js`, download the

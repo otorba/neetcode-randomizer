@@ -31,6 +31,9 @@ const HINT_SOLUTION_LABEL = "Solution";
 // The question tab lists the problem's tags in a <details> with this summary.
 const TOPICS_DISCLOSURE_TITLE = "Topics";
 const HIDDEN_DISCLOSURE_ATTRIBUTE = "data-neetcode-randomizer-hidden";
+// The question tab's heading. NeetCode renamed many problems on the page, while its list (our
+// problems.json) keeps the old LeetCode names, e.g. "Islands and Treasure" vs "Walls And Gates".
+const PROBLEM_TITLE_SELECTOR = "h1.problem-title";
 const MAX_VERDICT_LENGTH = 80;
 const TIMER_INTERVAL_MS = 1000;
 const TOGGLE_SHORTCUT_LABEL = "Alt+Shift+H";
@@ -49,6 +52,8 @@ let timerIntervalId = null;
 let urlWatchId = null;
 let lastObservedSlug = null;
 let lastObservedPath = null;
+// The heading read from the page, for the slug it was read on.
+let pageTitle = { slug: null, title: "" };
 let lastAutoResetSlug = null;
 let overlayMessage = "";
 let actionPending = false;
@@ -173,8 +178,9 @@ function startUrlWatching() {
   }
 
   urlWatchId = window.setInterval(() => {
-    // NeetCode renders the question tab lazily, so keep checking for its Topics block.
+    // NeetCode renders the question tab lazily, so keep checking for its Topics block and heading.
     syncTopicsDisclosure();
+    syncPageTitle();
 
     const path = window.location.pathname;
     if (path === lastObservedPath) {
@@ -578,7 +584,7 @@ function renderSessionSidebar() {
 
         <section class="problem">
           <p class="label">${isComplete ? "Session complete" : "Current problem"}</p>
-          <strong>${escapeHtml(currentProblem?.title || "Queue finished")}</strong>
+          <strong>${escapeHtml(currentProblem ? getDisplayedTitle(currentProblem) : "Queue finished")}</strong>
           ${
             currentProblem
               ? `<span>${escapeHtml(currentProblem.difficulty)}</span>`
@@ -1932,6 +1938,23 @@ function reportHelpUsed(level) {
     sessionId: activeSession.id,
     level
   });
+}
+
+function syncPageTitle() {
+  const slug = isCurrentQueuedPage() ? getProblemSlug() : null;
+  const title = slug
+    ? (document.querySelector(PROBLEM_TITLE_SELECTOR)?.textContent || "").trim()
+    : "";
+  if (slug === pageTitle.slug && title === pageTitle.title) {
+    return;
+  }
+
+  pageTitle = { slug, title };
+  renderSessionSidebar();
+}
+
+function getDisplayedTitle(problem) {
+  return (pageTitle.slug === problem.slug && pageTitle.title) || problem.title;
 }
 
 // NeetCode's own Topics block names the pattern; keep it hidden until it's guessed.
