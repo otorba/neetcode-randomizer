@@ -36,6 +36,10 @@ const HIDDEN_DISCLOSURE_ATTRIBUTE = "data-neetcode-randomizer-hidden";
 const PROBLEM_TITLE_SELECTOR = "h1.problem-title";
 const MAX_VERDICT_LENGTH = 80;
 const TIMER_INTERVAL_MS = 1000;
+const PAUSE_ICON =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>';
+const PLAY_ICON =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>';
 const TOGGLE_SHORTCUT_LABEL = "Alt+Shift+H";
 
 let activeSession = null;
@@ -1241,13 +1245,15 @@ function renderHeaderTimer() {
 
   const total = getSessionSize(activeSession);
   const isComplete = activeSession.currentIndex >= total;
+  const isPaused = isSessionPaused();
   const position = isComplete
     ? `${total}/${total}`
     : `${activeSession.currentIndex + 1}/${total}`;
+  const pauseLabel = isPaused ? "Resume session" : "Pause session";
 
   headerTimerHost.shadowRoot.innerHTML = `
     <style>${getHeaderTimerStyles()}</style>
-    <div class="timer-bar" aria-label="Practice session timers">
+    <div class="timer-bar ${isPaused ? "paused" : ""}" aria-label="Practice session timers">
       <span class="progress">${position}</span>
       <span class="divider" aria-hidden="true"></span>
       <span class="timer">
@@ -1259,8 +1265,19 @@ function renderHeaderTimer() {
         <span class="label">Problem</span>
         <strong id="lr-header-problem-timer">${formatElapsed(getProblemElapsed())}</strong>
       </span>
+      ${
+        isComplete
+          ? ""
+          : `<button class="pause-button" type="button" title="${pauseLabel}" aria-label="${pauseLabel}">${
+              isPaused ? PLAY_ICON : PAUSE_ICON
+            }</button>`
+      }
     </div>
   `;
+
+  headerTimerHost.shadowRoot
+    .querySelector(".pause-button")
+    ?.addEventListener("click", () => void handleSidebarAction("pause"));
 }
 
 function ensureHeaderTimerHost() {
@@ -1893,6 +1910,24 @@ function getHeaderTimerStyles() {
       font-weight: 800;
       font-variant-numeric: tabular-nums;
     }
+    .paused strong { color: #a3a3a3; }
+    .pause-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      margin: -4px -6px -4px 0;
+      padding: 0;
+      border: 0;
+      border-radius: 999px;
+      background: #292929;
+      color: #f4f4f4;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+    .pause-button:hover { background: #615fff; }
+    .pause-button svg { width: 12px; height: 12px; fill: currentColor; }
   `;
 }
 

@@ -38,7 +38,7 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
   entry per handled message with its result, plus page events the content script sends as
   `DEBUG_LOG` (`logDebugEvent`: submit clicked, verdict seen, timeouts, failed requests). When
   the user reports a problem, ask for that file and read it before reasoning from the code.
-- `content.js`: everything on the problem page. Shadow-DOM hosts for the sidebar, header timer,
+- `content.js`: everything on the problem page. Shadow-DOM hosts for the sidebar, header timer (with a pause / resume button),
   accepted prompt and summary screen, each with its own `get*Styles()` function. The NeetCode-specific
   hooks are the constants at the top (`SUBMIT_BUTTON_SELECTOR`, `RESULT_SELECTOR`, `RESET_*`,
   `EDITOR_SELECTOR`, `PROBLEM_TITLE_SELECTOR`, the `HINT_*` help hooks) plus `getChangedSubmissionStatus`,
