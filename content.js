@@ -74,6 +74,7 @@ let celebrationSessionId = null;
 document.addEventListener("click", handleDocumentClick, true);
 document.addEventListener("keydown", handleKeydown, true);
 chrome.storage.onChanged.addListener(handleStorageChange);
+window.addEventListener("resize", positionHeaderTimer);
 void initialize();
 
 async function initialize() {
@@ -185,6 +186,7 @@ function startUrlWatching() {
     // NeetCode renders the question tab lazily, so keep checking for its Topics block and heading.
     syncTopicsDisclosure();
     syncPageTitle();
+    positionHeaderTimer();
 
     const path = window.location.pathname;
     if (path === lastObservedPath) {
@@ -1291,37 +1293,28 @@ function ensureHeaderTimerHost() {
 }
 
 function mountHeaderTimer() {
-  const anchor = findPageHeaderAnchor();
-  if (anchor) {
-    // Centered on the navbar, out of its flex flow; the navbar itself is unpositioned.
-    if (getComputedStyle(anchor).position === "static") {
-      anchor.style.position = "relative";
-    }
-    headerTimerHost.style.position = "absolute";
-    headerTimerHost.style.top = "50%";
-    headerTimerHost.style.left = "50%";
-    headerTimerHost.style.transform = "translate(-50%, -50%)";
-    headerTimerHost.style.zIndex = "1";
-    headerTimerHost.style.display = "flex";
-    headerTimerHost.style.alignItems = "center";
-    if (headerTimerHost.parentElement !== anchor) {
-      anchor.appendChild(headerTimerHost);
-    }
-    return;
-  }
-
-  headerTimerHost.style.display = "";
-  headerTimerHost.style.alignItems = "";
-
   if (headerTimerHost.parentElement !== document.documentElement) {
     document.documentElement.appendChild(headerTimerHost);
   }
 
   headerTimerHost.style.position = "fixed";
-  headerTimerHost.style.top = "12px";
-  headerTimerHost.style.left = "50%";
-  headerTimerHost.style.transform = "translateX(-50%)";
-  headerTimerHost.style.zIndex = "2147483646";
+  // The navbar's own layer: above the page, under NeetCode's overlays and our sidebar.
+  headerTimerHost.style.zIndex = "151";
+  headerTimerHost.style.transform = "translate(-50%, -50%)";
+  positionHeaderTimer();
+}
+
+// Fixed at the navbar's center, measured instead of placed inside it, so NeetCode's
+// navbar styles can't move it. Re-measured on resize and on the URL watch tick.
+function positionHeaderTimer() {
+  if (!headerTimerHost?.isConnected) {
+    return;
+  }
+
+  const rect = findPageHeaderAnchor()?.getBoundingClientRect();
+  const hasNavbar = Boolean(rect?.width && rect.height);
+  headerTimerHost.style.left = hasNavbar ? `${rect.left + rect.width / 2}px` : "50%";
+  headerTimerHost.style.top = hasNavbar ? `${rect.top + rect.height / 2}px` : "28px";
 }
 
 // Bare header tags on NeetCode belong to modals, so only the problem navbar qualifies.
