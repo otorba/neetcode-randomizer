@@ -1293,15 +1293,17 @@ function ensureHeaderTimerHost() {
 function mountHeaderTimer() {
   const anchor = findPageHeaderAnchor();
   if (anchor) {
-    headerTimerHost.style.position = "";
-    headerTimerHost.style.top = "";
-    headerTimerHost.style.left = "";
-    headerTimerHost.style.transform = "";
-    headerTimerHost.style.zIndex = "";
+    // Centered on the navbar, out of its flex flow; the navbar itself is unpositioned.
+    if (getComputedStyle(anchor).position === "static") {
+      anchor.style.position = "relative";
+    }
+    headerTimerHost.style.position = "absolute";
+    headerTimerHost.style.top = "50%";
+    headerTimerHost.style.left = "50%";
+    headerTimerHost.style.transform = "translate(-50%, -50%)";
+    headerTimerHost.style.zIndex = "1";
     headerTimerHost.style.display = "flex";
     headerTimerHost.style.alignItems = "center";
-    headerTimerHost.style.marginLeft = "auto";
-    headerTimerHost.style.marginRight = "12px";
     if (headerTimerHost.parentElement !== anchor) {
       anchor.appendChild(headerTimerHost);
     }
@@ -1310,8 +1312,6 @@ function mountHeaderTimer() {
 
   headerTimerHost.style.display = "";
   headerTimerHost.style.alignItems = "";
-  headerTimerHost.style.marginLeft = "";
-  headerTimerHost.style.marginRight = "";
 
   if (headerTimerHost.parentElement !== document.documentElement) {
     document.documentElement.appendChild(headerTimerHost);
