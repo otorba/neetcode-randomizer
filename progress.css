@@ -175,6 +175,14 @@ h2 {
   background: var(--easy);
 }
 
+.tag {
+  margin-left: 6px;
+  color: var(--muted);
+  font-size: 0.74rem;
+  white-space: nowrap;
+  cursor: help;
+}
+
 .columns {
   display: grid;
   grid-template-columns: 1fr 1.6fr;
@@ -258,7 +266,8 @@ h2 {
   color: var(--easy);
 }
 
-.skipped .badge {
+.skipped .badge,
+.due .badge {
   background: var(--medium-bg);
   color: var(--medium);
 }

@@ -13,7 +13,7 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
   its topic) with "Go to session tab" (focuses the tab on the current problem, or sends
   `OPEN_CURRENT_PROBLEM`) and "End session" (`END_SESSION`).
 - `theme.css`: the palette variables, shared by `popup.css` and `progress.css`.
-- `progress.html` / `progress.js` / `progress.css`: per-pattern mastery, mix-ups, recent attempts,
+- `progress.html` / `progress.js` / `progress.css`: per-pattern mastery, the review schedule, mix-ups, recent attempts,
   export / import (merge) / clear of the history. Writes `attemptHistory` directly. "Debug log"
   downloads `neetcode-randomizer-debug-log-<date>.json`: the `debugLog` entries plus the current
   `activeSession`, `settings` and extension version.

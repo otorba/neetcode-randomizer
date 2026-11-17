@@ -1,10 +1,13 @@
 const DATA_PATH = "data/problems.json";
 const RECENT_ATTEMPT_COUNT = 20;
 const MIXUP_COUNT = 8;
+const REVIEW_LIST_COUNT = 12;
 
 const elements = {
   summary: document.getElementById("summary"),
   topicRows: document.getElementById("topic-rows"),
+  timeTargets: document.getElementById("time-targets"),
+  reviewList: document.getElementById("review-list"),
   mixupList: document.getElementById("mixup-list"),
   attemptList: document.getElementById("attempt-list"),
   exportButton: document.getElementById("export-button"),
@@ -15,6 +18,7 @@ const elements = {
 };
 
 let topics = [];
+let problemsBySlug = new Map();
 
 document.addEventListener("DOMContentLoaded", init);
 
@@ -32,6 +36,7 @@ async function init() {
   const response = await fetch(chrome.runtime.getURL(DATA_PATH));
   const problems = await response.json();
   topics = Array.from(new Set(problems.flatMap((problem) => problem.topics)));
+  problemsBySlug = new Map(problems.map((problem) => [problem.slug, problem]));
   render(await getHistory());
 }
 
@@ -44,9 +49,14 @@ function render(history) {
   const scored = history.filter(isScoredAttempt);
   const topicStats = getTopicStats(history);
   const now = Date.now();
-  const dueCount = Array.from(getReviewSchedule(history).values()).filter(
-    (entry) => entry.dueAt <= now
-  ).length;
+  // A slug the problem data no longer holds can't be picked, so it isn't listed.
+  const reviews = Array.from(getReviewSchedule(history), ([slug, entry]) => ({
+    problem: problemsBySlug.get(slug),
+    ...entry
+  }))
+    .filter((review) => review.problem)
+    .sort((a, b) => a.dueAt - b.dueAt);
+  const dueCount = reviews.filter((review) => review.dueAt <= now).length;
   const guessed = scored.filter((attempt) => attempt.guess !== null);
   const named = guessed.filter((attempt) => attempt.guess === attempt.topic).length;
   const solved = scored.filter((attempt) => attempt.outcome === "solved");
@@ -74,7 +84,7 @@ function render(history) {
       const level = mastery < 0.4 ? "low" : mastery < 0.7 ? "mid" : "high";
       return `
         <tr>
-          <td>${escapeHtml(topic)}</td>
+          <td>${escapeHtml(topic)}${stats?.misnamed ? ` <span class="tag" title="You named this pattern for a problem of another one. That lowers its mastery too.">named by mistake ${stats.misnamed}×</span>` : ""}</td>
           <td class="mastery-col">
             <span class="bar ${stats ? level : "none"}"><span style="width: ${stats ? Math.round(mastery * 100) : 0}%"></span></span>
           </td>
@@ -87,6 +97,43 @@ function render(history) {
       `;
     })
     .join("");
+
+  elements.timeTargets.textContent = `Going over the time target lowers the score: ${Object.keys(
+    TARGET_MINUTES
+  )
+    .map((difficulty) => {
+      const targetMs = getTimeTargetMs(history, difficulty);
+      const paced = targetMs !== getDefaultTimeTargetMs(difficulty);
+      return `${difficulty} ${Math.round(targetMs / 60000)} min${paced ? " (from your pace)" : ""}`;
+    })
+    .join(" · ")}.`;
+
+  const listedReviews = reviews.slice(0, REVIEW_LIST_COUNT);
+  elements.reviewList.innerHTML = reviews.length
+    ? listedReviews
+        .map(({ problem, step, dueAt }) => {
+          const due = dueAt <= now;
+          const meta = [problem.difficulty, problem.topics[0]];
+          if (problem.pro) {
+            meta.push("Pro");
+          }
+          meta.push(`review ${step + 1} of ${REVIEW_INTERVALS_DAYS.length}`);
+          return `
+            <li class="${due ? "due" : "upcoming"}">
+              <div class="attempt-info">
+                <a href="${escapeHtml(problem.url)}" target="_blank" rel="noreferrer">${escapeHtml(problem.title)}</a>
+                <span class="meta">${escapeHtml(meta.join(" · "))}</span>
+              </div>
+              <span class="badge">${due ? "due" : "upcoming"}</span>
+              <span class="time">${due ? formatAgo(now - dueAt) : formatUntil(dueAt - now)}</span>
+            </li>
+          `;
+        })
+        .join("") +
+      (reviews.length > listedReviews.length
+        ? `<li class="empty">and ${reviews.length - listedReviews.length} more</li>`
+        : "")
+    : `<li class="empty">Nothing scheduled to come back.</li>`;
 
   const mixups = new Map();
   for (const attempt of guessed) {
@@ -105,6 +152,7 @@ function render(history) {
         .join("")
     : `<li class="empty">No mix-ups yet.</li>`;
 
+  const repeats = getRepeatAttempts(history);
   const recent = history.slice(-RECENT_ATTEMPT_COUNT).reverse();
   elements.attemptList.innerHTML = recent.length
     ? recent
@@ -113,7 +161,7 @@ function render(history) {
             <li class="${attempt.outcome}">
               <div class="attempt-info">
                 <a href="https://neetcode.io/problems/${encodeURIComponent(attempt.slug)}" target="_blank" rel="noreferrer">${escapeHtml(attempt.title)}</a>
-                <span class="meta">${escapeHtml(formatAttemptMeta(attempt))}</span>
+                <span class="meta">${escapeHtml(formatAttemptMeta(attempt, repeats.has(attempt)))}</span>
               </div>
               <span class="badge">${attempt.outcome}</span>
               <span class="time">${formatElapsed(attempt.elapsedMs)}</span>
@@ -124,8 +172,11 @@ function render(history) {
     : `<li class="empty">Finish a session problem to start the history.</li>`;
 }
 
-function formatAttemptMeta(attempt) {
+function formatAttemptMeta(attempt, isRepeat) {
   const parts = [attempt.difficulty, attempt.topic];
+  if (isRepeat) {
+    parts.push("review");
+  }
   if (attempt.guess !== null && attempt.outcome !== "rerolled") {
     parts.push(
       attempt.guess === attempt.topic
@@ -225,6 +276,16 @@ async function clearHistory() {
 
 function setStatus(message) {
   elements.statusMessage.textContent = message;
+}
+
+function formatUntil(milliseconds) {
+  const days = Math.ceil(milliseconds / DAY_MS);
+  if (days > 1) {
+    return `in ${days} days`;
+  }
+
+  const hours = Math.ceil(milliseconds / 3600000);
+  return hours > 1 ? `in ${hours} h` : "within the hour";
 }
 
 function formatAgo(milliseconds) {

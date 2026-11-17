@@ -116,19 +116,31 @@ function isScoredAttempt(attempt) {
   return attempt.outcome !== "rerolled";
 }
 
-// Per topic: a Beta(alpha, beta) belief about how well it's mastered, newest attempts
-// weighted most, plus plain counts for the progress page. A topic that was only ever
-// named by mistake has an entry with no attempts and a null `lastAt`.
-function getTopicStats(history) {
-  // slug -> scored attempts not yet visited by the newest-first loop below, so an
-  // attempt with any left over is a repeat of a problem seen before.
-  const earlierAttempts = new Map();
+// The scored attempts at a problem that was attempted before.
+function getRepeatAttempts(history) {
+  const seenSlugs = new Set();
+  const repeats = new Set();
   for (const attempt of history) {
-    if (isScoredAttempt(attempt)) {
-      earlierAttempts.set(attempt.slug, (earlierAttempts.get(attempt.slug) || 0) + 1);
+    if (!isScoredAttempt(attempt)) {
+      continue;
+    }
+
+    if (seenSlugs.has(attempt.slug)) {
+      repeats.add(attempt);
+    } else {
+      seenSlugs.add(attempt.slug);
     }
   }
 
+  return repeats;
+}
+
+// Per topic: a Beta(alpha, beta) belief about how well it's mastered, newest attempts
+// weighted most, plus plain counts for the progress page. `misnamed` counts the wrong
+// guesses that named this topic; a topic that was only ever named by mistake has an
+// entry with no attempts and a null `lastAt`.
+function getTopicStats(history) {
+  const repeats = getRepeatAttempts(history);
   const stats = new Map();
   for (let index = history.length - 1; index >= 0; index -= 1) {
     const attempt = history[index];
@@ -136,19 +148,17 @@ function getTopicStats(history) {
       continue;
     }
 
-    const earlierCount = earlierAttempts.get(attempt.slug) - 1;
-    earlierAttempts.set(attempt.slug, earlierCount);
-
     if (attempt.guess && attempt.guess !== attempt.topic) {
       const named = getOrAddTopicStats(stats, attempt.guess);
       named.beta += MIXUP_PENALTY * named.weight;
+      named.misnamed += 1;
     }
 
     const topic = getOrAddTopicStats(stats, attempt.topic);
     topic.lastAt ??= attempt.endedAt;
 
     const score =
-      attempt.guess === null || earlierCount > 0
+      attempt.guess === null || repeats.has(attempt)
         ? Math.min(scoreAttempt(attempt), KNOWN_TOPIC_MAX_SCORE)
         : scoreAttempt(attempt);
     topic.alpha += score * topic.weight;
@@ -184,6 +194,7 @@ function getOrAddTopicStats(stats, topicName) {
       solvedSolo: 0,
       guessed: 0,
       recognized: 0,
+      misnamed: 0,
       lastAt: null
     };
     stats.set(topicName, topic);
