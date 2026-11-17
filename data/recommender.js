@@ -14,8 +14,10 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // Share of picks drawn uniformly from the list, like a plain shuffle. Keeps the mix
 // unpredictable even when one topic is clearly the weakest.
 const RANDOM_PICK_SHARE = 0.2;
-// Chance that a due review takes the slot when one is due.
-const REVIEW_PICK_SHARE = 0.25;
+// Chance that a due review takes the slot: this much per due review, up to the cap, so
+// a backlog is worked off faster without reviews taking over the session.
+const REVIEW_SHARE_PER_DUE = 0.08;
+const MAX_REVIEW_SHARE = 0.5;
 // The weakest topic is at most this many times as likely as the strongest one.
 const MAX_NEED_WEIGHT = 3;
 // How far a barely tried topic is pushed toward the full need weight, by its attempt
@@ -183,8 +185,13 @@ function pickAdaptiveProblem(allProblems, filters, history, excludeSlugs, now = 
   const dueReviews = allProblems.filter(
     (problem) => isEligible(problem) && schedule.get(problem.slug)?.dueAt <= now
   );
-  if (dueReviews.length && Math.random() < REVIEW_PICK_SHARE) {
-    return pickUniform(dueReviews);
+  const reviewShare = Math.min(MAX_REVIEW_SHARE, dueReviews.length * REVIEW_SHARE_PER_DUE);
+  if (Math.random() < reviewShare) {
+    // The longer overdue, the likelier; a weight, not an order, so it stays a draw.
+    const overdueWeights = dueReviews.map(
+      (problem) => now - schedule.get(problem.slug).dueAt + DAY_MS
+    );
+    return dueReviews[pickWeightedIndex(overdueWeights)];
   }
 
   const seenSlugs = new Set(
