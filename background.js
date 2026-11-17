@@ -472,7 +472,7 @@ async function getAttemptHistory() {
 
 async function appendAttempt(attempt) {
   const history = await getAttemptHistory();
-  history.push(attempt);
+  history.push({ ...attempt, targetMs: getTimeTargetMs(history, attempt.difficulty) });
   await chrome.storage.local.set({ [HISTORY_STORAGE_KEY]: history });
 }
 

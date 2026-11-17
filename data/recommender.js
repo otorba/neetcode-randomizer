@@ -2,11 +2,11 @@
 // (importScripts) and progress.js, so keep it a classic script. Needs problem-lists.js.
 //
 // An attempt is { slug, title, topic, difficulty, endedAt, outcome, elapsedMs,
-// wrongSubmits, help, guess, sessionId }. `outcome` is "solved", "skipped" or
+// wrongSubmits, help, guess, sessionId, targetMs }. `outcome` is "solved", "skipped" or
 // "rerolled"; `help` is the most help used before solving (HELP_LEVELS in ui-helpers.js);
 // `guess` is the pattern the user named, "" for "Not sure", or null when the session asked
-// for no guess (a single-topic session). Attempts stored before `help` carry
-// `sawSolution` instead.
+// for no guess (a single-topic session). `targetMs` is the solve-time target the attempt
+// was held to. Attempts stored before `help` carry `sawSolution` instead.
 
 const HISTORY_STORAGE_KEY = "attemptHistory";
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -44,7 +44,12 @@ const HELP_MAX_SCORE = { hint: 0.6, solution: 0.2 };
 // Naming the wrong pattern also counts against the named one, as this share of a
 // failed attempt: telling the two apart is the skill.
 const MIXUP_PENALTY = 0.5;
+// Solve-time targets. With enough solves at a difficulty the target follows the user's
+// own pace instead (getTimeTargetMs), within these bounds of the default.
 const TARGET_MINUTES = { Easy: 15, Medium: 25, Hard: 40 };
+const MIN_PACE_SAMPLES = 5;
+const PACE_TARGET_FACTOR = 1.25;
+const MAX_PACE_TARGET_FACTOR = 2;
 // Difficulty mix within the picked topic, by that topic's mastery.
 const DIFFICULTY_MIX = [
   { below: 0.4, weights: { Easy: 0.5, Medium: 0.45, Hard: 0.05 } },
@@ -66,7 +71,8 @@ function scoreAttempt(attempt) {
 
   let score = recognized ? 1 : 0.4;
   score -= Math.min(attempt.wrongSubmits, 3) * 0.1;
-  const targetMs = (TARGET_MINUTES[attempt.difficulty] || TARGET_MINUTES.Medium) * 60000;
+  // Attempts stored before `targetMs` are scored against the default target.
+  const targetMs = attempt.targetMs ?? getDefaultTimeTargetMs(attempt.difficulty);
   if (attempt.elapsedMs > 2 * targetMs) {
     score -= 0.3;
   } else if (attempt.elapsedMs > targetMs) {
@@ -78,6 +84,32 @@ function scoreAttempt(attempt) {
   }
 
   return Math.min(Math.max(score, 0), 1);
+}
+
+function getDefaultTimeTargetMs(difficulty) {
+  return (TARGET_MINUTES[difficulty] || TARGET_MINUTES.Medium) * 60000;
+}
+
+// The solve-time target for the next attempt at this difficulty: a margin over the
+// median of the user's solves so far, never under the default. Stored on the attempt
+// (`targetMs`), so later solves don't rescore older ones.
+function getTimeTargetMs(history, difficulty) {
+  const defaultMs = getDefaultTimeTargetMs(difficulty);
+  const solveTimes = history
+    .filter((attempt) => attempt.outcome === "solved" && attempt.difficulty === difficulty)
+    .map((attempt) => attempt.elapsedMs)
+    .sort((a, b) => a - b);
+  if (solveTimes.length < MIN_PACE_SAMPLES) {
+    return defaultMs;
+  }
+
+  const middle = solveTimes.length >> 1;
+  const median =
+    solveTimes.length % 2 ? solveTimes[middle] : (solveTimes[middle - 1] + solveTimes[middle]) / 2;
+  return Math.min(
+    Math.max(median * PACE_TARGET_FACTOR, defaultMs),
+    defaultMs * MAX_PACE_TARGET_FACTOR
+  );
 }
 
 function isScoredAttempt(attempt) {
