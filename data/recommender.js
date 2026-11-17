@@ -33,9 +33,9 @@ const ATTEMPT_DECAY = 0.85;
 // moves it one interval further, and past the last one it never returns.
 const REVIEW_INTERVALS_DAYS = [1, 4, 14];
 const STRONG_ATTEMPT_SCORE = 0.7;
-// Mastery credit cap for attempts in a single-topic session: the topic was known up
-// front, so solving says nothing about recognizing it. The review schedule ignores
-// the cap, otherwise every drilled problem would come back.
+// Mastery credit cap for attempts where the topic was known up front, so solving says
+// nothing about recognizing it: a single-topic session, or a problem seen before. The
+// review schedule ignores the cap, otherwise every drilled problem would come back.
 const KNOWN_TOPIC_MAX_SCORE = 0.6;
 // Score caps by help level. A hint lands just under STRONG_ATTEMPT_SCORE, so the problem
 // enters the review schedule like any weak attempt. It also caps recognition, since help
@@ -84,12 +84,24 @@ function isScoredAttempt(attempt) {
 // Per topic: a Beta(alpha, beta) belief about how well it's mastered, newest attempts
 // weighted most, plus plain counts for the progress page.
 function getTopicStats(history) {
+  // slug -> scored attempts not yet visited by the newest-first loop below, so an
+  // attempt with any left over is a repeat of a problem seen before.
+  const earlierAttempts = new Map();
+  for (const attempt of history) {
+    if (isScoredAttempt(attempt)) {
+      earlierAttempts.set(attempt.slug, (earlierAttempts.get(attempt.slug) || 0) + 1);
+    }
+  }
+
   const stats = new Map();
   for (let index = history.length - 1; index >= 0; index -= 1) {
     const attempt = history[index];
     if (!isScoredAttempt(attempt)) {
       continue;
     }
+
+    const earlierCount = earlierAttempts.get(attempt.slug) - 1;
+    earlierAttempts.set(attempt.slug, earlierCount);
 
     let topic = stats.get(attempt.topic);
     if (!topic) {
@@ -108,7 +120,7 @@ function getTopicStats(history) {
     }
 
     const score =
-      attempt.guess === null
+      attempt.guess === null || earlierCount > 0
         ? Math.min(scoreAttempt(attempt), KNOWN_TOPIC_MAX_SCORE)
         : scoreAttempt(attempt);
     topic.alpha += score * topic.weight;
