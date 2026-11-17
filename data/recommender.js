@@ -17,7 +17,7 @@ const RANDOM_PICK_SHARE = 0.2;
 // Chance that a due review takes the slot: this much per due review, up to the cap, so
 // a backlog is worked off faster without reviews taking over the session.
 const REVIEW_SHARE_PER_DUE = 0.08;
-const MAX_REVIEW_SHARE = 0.5;
+const MAX_REVIEW_SHARE = 0.3;
 // The weakest topic is at most this many times as likely as the strongest one.
 const MAX_NEED_WEIGHT = 3;
 // How far a barely tried topic is pushed toward the full need weight, by its attempt

@@ -62,7 +62,7 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
   with no attempts gets the full need weight, one attempt half the boost (`NOVELTY_BOOSTS`).
   A wrong guess also counts against the pattern that was named (`MIXUP_PENALTY`), so
   `getTopicStats` can hold an entry with `attempts: 0` and `lastAt: null`.
-- Due reviews take 8% of the picks each, up to 50%, weighted by how long they are overdue.
+- Due reviews take 8% of the picks each, up to 30%, weighted by how long they are overdue.
   A repeat of a problem seen before gets at most 0.6 mastery credit, like a single-topic
   attempt.
 - Solve-time targets follow the user's pace after five solves at a difficulty
