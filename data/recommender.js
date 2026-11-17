@@ -41,6 +41,9 @@ const KNOWN_TOPIC_MAX_SCORE = 0.6;
 // enters the review schedule like any weak attempt. It also caps recognition, since help
 // is only counted before the guess.
 const HELP_MAX_SCORE = { hint: 0.6, solution: 0.2 };
+// Naming the wrong pattern also counts against the named one, as this share of a
+// failed attempt: telling the two apart is the skill.
+const MIXUP_PENALTY = 0.5;
 const TARGET_MINUTES = { Easy: 15, Medium: 25, Hard: 40 };
 // Difficulty mix within the picked topic, by that topic's mastery.
 const DIFFICULTY_MIX = [
@@ -82,7 +85,8 @@ function isScoredAttempt(attempt) {
 }
 
 // Per topic: a Beta(alpha, beta) belief about how well it's mastered, newest attempts
-// weighted most, plus plain counts for the progress page.
+// weighted most, plus plain counts for the progress page. A topic that was only ever
+// named by mistake has an entry with no attempts and a null `lastAt`.
 function getTopicStats(history) {
   // slug -> scored attempts not yet visited by the newest-first loop below, so an
   // attempt with any left over is a repeat of a problem seen before.
@@ -103,21 +107,13 @@ function getTopicStats(history) {
     const earlierCount = earlierAttempts.get(attempt.slug) - 1;
     earlierAttempts.set(attempt.slug, earlierCount);
 
-    let topic = stats.get(attempt.topic);
-    if (!topic) {
-      topic = {
-        alpha: 1,
-        beta: 1,
-        weight: 1,
-        attempts: 0,
-        solved: 0,
-        solvedSolo: 0,
-        guessed: 0,
-        recognized: 0,
-        lastAt: attempt.endedAt
-      };
-      stats.set(attempt.topic, topic);
+    if (attempt.guess && attempt.guess !== attempt.topic) {
+      const named = getOrAddTopicStats(stats, attempt.guess);
+      named.beta += MIXUP_PENALTY * named.weight;
     }
+
+    const topic = getOrAddTopicStats(stats, attempt.topic);
+    topic.lastAt ??= attempt.endedAt;
 
     const score =
       attempt.guess === null || earlierCount > 0
@@ -142,6 +138,26 @@ function getTopicStats(history) {
   }
 
   return stats;
+}
+
+function getOrAddTopicStats(stats, topicName) {
+  let topic = stats.get(topicName);
+  if (!topic) {
+    topic = {
+      alpha: 1,
+      beta: 1,
+      weight: 1,
+      attempts: 0,
+      solved: 0,
+      solvedSolo: 0,
+      guessed: 0,
+      recognized: 0,
+      lastAt: null
+    };
+    stats.set(topicName, topic);
+  }
+
+  return topic;
 }
 
 function getMastery(topicStats) {

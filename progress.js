@@ -71,18 +71,18 @@ function render(history) {
   elements.topicRows.innerHTML = rows
     .map(({ topic, stats }) => {
       const mastery = getMastery(stats);
-      const level = !stats ? "none" : mastery < 0.4 ? "low" : mastery < 0.7 ? "mid" : "high";
+      const level = mastery < 0.4 ? "low" : mastery < 0.7 ? "mid" : "high";
       return `
         <tr>
           <td>${escapeHtml(topic)}</td>
           <td class="mastery-col">
-            <span class="bar ${level}"><span style="width: ${stats ? Math.round(mastery * 100) : 0}%"></span></span>
+            <span class="bar ${stats ? level : "none"}"><span style="width: ${stats ? Math.round(mastery * 100) : 0}%"></span></span>
           </td>
           <td>${stats?.attempts ?? 0}</td>
           <td>${stats?.solved ?? 0}</td>
           <td>${stats?.solved ? `${stats.solvedSolo}/${stats.solved}` : "—"}</td>
           <td>${stats?.guessed ? `${stats.recognized}/${stats.guessed}` : "—"}</td>
-          <td>${stats ? formatAgo(now - stats.lastAt) : "never"}</td>
+          <td>${stats?.lastAt ? formatAgo(now - stats.lastAt) : "never"}</td>
         </tr>
       `;
     })
