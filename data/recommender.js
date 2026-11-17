@@ -18,6 +18,10 @@ const RANDOM_PICK_SHARE = 0.2;
 const REVIEW_PICK_SHARE = 0.25;
 // The weakest topic is at most this many times as likely as the strongest one.
 const MAX_NEED_WEIGHT = 3;
+// How far a barely tried topic is pushed toward the full need weight, by its attempt
+// count: never tried counts as the weakest, one attempt goes halfway, after that the
+// mastery belief alone decides.
+const NOVELTY_BOOSTS = [1, 0.5];
 // Weight multipliers for the topic of the last attempt, the one before it, and so on.
 // Soft on purpose: a hard "never twice in a row" rule tells you what the next one isn't.
 const RECENT_TOPIC_PENALTIES = [0.25, 0.5, 0.75];
@@ -229,8 +233,9 @@ function pickAdaptiveProblem(allProblems, filters, history, excludeSlugs, now = 
     const stats = topicStats.get(topic);
     // A random draw from the topic's mastery belief: uncertain topics swing widely,
     // so the order of picks is never fixed.
-    const mastery = stats ? sampleBeta(stats.alpha, stats.beta) : sampleBeta(1, 1);
-    const need = 1 + (MAX_NEED_WEIGHT - 1) * (1 - mastery);
+    const mastery = sampleBeta(stats?.alpha ?? 1, stats?.beta ?? 1);
+    const novelty = NOVELTY_BOOSTS[stats?.attempts ?? 0] ?? 0;
+    const need = 1 + (MAX_NEED_WEIGHT - 1) * (1 - mastery * (1 - novelty));
     // Bigger topics come up more often, as in a plain shuffle, but sublinearly.
     const size = Math.sqrt(Math.max(1, listSizeByTopic.get(topic)?.length || 0));
     const recency = recentTopics.reduce(
