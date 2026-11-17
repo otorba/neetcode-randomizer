@@ -214,10 +214,6 @@ select option {
   float: left;
 }
 
-.inline-check[hidden] {
-  display: none;
-}
-
 .inline-check {
   display: flex;
   margin: 0;

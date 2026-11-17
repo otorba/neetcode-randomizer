@@ -1,17 +1,18 @@
 // Shared by popup.js and background.js (importScripts), so keep it a classic script.
 
 const PROBLEM_LIST_ALL = "allNC";
+const PROBLEM_LIST_PRO = "proOnly";
 const DEFAULT_PROBLEM_LIST = "neetcode150";
 
 // Ids match the list flags in problems.json `lists`, except "allNC", which is every
-// problem. Only "premiumAlgo100" and "allNC" hold Pro problems. `widensTo` is the
-// next larger list that contains this one, where adaptive picks go once a topic runs
-// out of unseen problems.
+// free problem, and "proOnly", which is every Pro problem. No other list holds Pro
+// problems. `widensTo` is the next larger list that contains this one, where adaptive
+// picks go once a topic runs out of unseen problems.
 const PROBLEM_LISTS = [
   { id: "blind75", label: "Blind 75", widensTo: "neetcode150" },
   { id: "neetcode150", label: "NeetCode 150", widensTo: "neetcode250" },
   { id: "neetcode250", label: "NeetCode 250", widensTo: PROBLEM_LIST_ALL },
-  { id: "premiumAlgo100", label: "Premium 100", widensTo: PROBLEM_LIST_ALL },
+  { id: PROBLEM_LIST_PRO, label: "Pro Only", widensTo: null },
   { id: PROBLEM_LIST_ALL, label: "NeetCode All", widensTo: null }
 ];
 
@@ -37,21 +38,27 @@ function getWideningChain(problemList) {
   return chain;
 }
 
-// Pro problems are opt-in: without a subscription NeetCode shows a paywall and
-// the session can never reach an accepted submit.
-function getProblemsForList(allProblems, problemList, includePro) {
-  return allProblems.filter(
-    (problem) =>
-      (includePro || !problem.pro) &&
-      (problemList === PROBLEM_LIST_ALL || problem.lists.includes(problemList))
+// Pro problems live only in "Pro Only": without a subscription NeetCode shows a
+// paywall and the session can never reach an accepted submit.
+function isInProblemList(problem, problemList) {
+  if (problemList === PROBLEM_LIST_PRO) {
+    return problem.pro;
+  }
+
+  return (
+    !problem.pro &&
+    (problemList === PROBLEM_LIST_ALL || problem.lists.includes(problemList))
   );
+}
+
+function getProblemsForList(allProblems, problemList) {
+  return allProblems.filter((problem) => isInProblemList(problem, problemList));
 }
 
 function filterProblems(allProblems, filters) {
   const pool = getProblemsForList(
     allProblems,
-    filters.problemList || DEFAULT_PROBLEM_LIST,
-    filters.includePro
+    filters.problemList || DEFAULT_PROBLEM_LIST
   );
   // An empty `topics` means all topics. `topic` is the single-topic shape that
   // sessions started before multi-topic selection still carry in storage.

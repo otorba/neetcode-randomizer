@@ -83,12 +83,13 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
   the repo.
 - NeetCode's own list ids (bundle enum): `blind75`, `neetcode150`, `neetcode250`, `allNC`,
   `coreSkills`, `systemDesign`. Core Skills and System Design are not judged problems. There is
-  also a `premiumAlgo100` flag (93 of 100 Pro), offered as "Premium 100".
-- "NeetCode All" (`allNC`) is 791 free + 302 Pro problems; 75 / 150 / 250 hold no Pro problems,
-  Premium 100 holds 93. Pro is opt-in (`settings.includePro`, copied into session
-  `filters.includePro`): without a subscription a Pro problem opens a paywall and the session
-  can't reach an accepted submit. The popup shows the "Include Pro" box only for lists that
-  contain Pro problems.
+  also a `premiumAlgo100` flag (93 of 100 Pro); the data keeps it, no list offers it.
+- NeetCode's `allNC` is 791 free + 302 Pro problems; 75 / 150 / 250 hold no Pro problems.
+  The extension splits it on the Pro flag (`isInProblemList`): "Pro Only" (`proOnly`, our own
+  id) is the 302 Pro problems and "NeetCode All" the 791 free ones, so every list is either
+  all Pro or all free. Without a subscription a Pro problem opens a paywall and the session
+  can't reach an accepted submit. Adaptive picks never cross that boundary: Pro Only widens
+  to nothing, and due reviews are filtered by the same flag.
 - `topics` holds a single entry, NeetCode's `pattern` (18 values).
 - Session `filters.topics` is an array, empty means all. Sessions stored before multi-topic carry
   `filters.topic` (a string); `filterProblems` reads both.

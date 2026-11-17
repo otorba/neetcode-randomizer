@@ -7,9 +7,9 @@ extension (MIT) to NeetCode.
 
 ## Features
 
-- Pick a list (Blind 75, NeetCode 150, NeetCode 250, Premium 100 or NeetCode All), a session size
-  (1-10), any combination of topics and difficulties. Pro problems (most of Premium 100, part of
-  NeetCode All) are included only when "Include Pro" is checked.
+- Pick a list (Blind 75, NeetCode 150, NeetCode 250, Pro Only or NeetCode All), a session size
+  (1-10), any combination of topics and difficulties. Pro Only holds every problem that needs a
+  NeetCode Pro subscription; the other lists hold free problems only.
 - With "All topics" the session is adaptive: each problem is picked when you reach it, from your
   attempt history. Patterns you struggle with come up more often, failed problems come back after
   1, 4 and 14 days, and a pattern that runs out of unseen problems borrows them from the next

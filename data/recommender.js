@@ -169,10 +169,11 @@ function getReviewSchedule(history) {
 // Picks one problem for an adaptive session, or null when nothing is left.
 // `excludeSlugs` holds the problems this session already used.
 function pickAdaptiveProblem(allProblems, filters, history, excludeSlugs, now = Date.now()) {
+  // Due reviews come from any list, but never across the Pro boundary.
   const isEligible = (problem) =>
     !excludeSlugs.has(problem.slug) &&
     filters.difficulties.includes(problem.difficulty) &&
-    (filters.includePro || !problem.pro);
+    problem.pro === (filters.problemList === PROBLEM_LIST_PRO);
 
   const schedule = getReviewSchedule(history);
   const dueReviews = allProblems.filter(
@@ -187,7 +188,7 @@ function pickAdaptiveProblem(allProblems, filters, history, excludeSlugs, now = 
   );
   // Nested lists, narrowest first: the chosen list, then the ones that contain it.
   const pools = getWideningChain(filters.problemList).map((problemList) =>
-    getProblemsForList(allProblems, problemList, filters.includePro).filter(isEligible)
+    getProblemsForList(allProblems, problemList).filter(isEligible)
   );
   const freshPools = pools.map((pool) =>
     pool.filter((problem) => !seenSlugs.has(problem.slug))
