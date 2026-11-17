@@ -255,8 +255,9 @@ function pickAdaptiveProblem(allProblems, filters, history, excludeSlugs, now = 
     const mastery = sampleBeta(stats?.alpha ?? 1, stats?.beta ?? 1);
     const novelty = NOVELTY_BOOSTS[stats?.attempts ?? 0] ?? 0;
     const need = 1 + (MAX_NEED_WEIGHT - 1) * (1 - mastery * (1 - novelty));
-    // Bigger topics come up more often, as in a plain shuffle, but sublinearly.
-    const size = Math.sqrt(Math.max(1, listSizeByTopic.get(topic)?.length || 0));
+    // Bigger topics come up more often, as in a plain shuffle, but only by the cube
+    // root: the largest topic must not outweigh the need factor.
+    const size = Math.cbrt(Math.max(1, listSizeByTopic.get(topic)?.length || 0));
     const recency = recentTopics.reduce(
       (product, recentTopic, index) =>
         recentTopic === topic ? product * RECENT_TOPIC_PENALTIES[index] : product,
