@@ -58,6 +58,17 @@ at neetcode.io. Keep the original copyright line in `LICENSE`.
   the selected topics otherwise, and empty for one topic (no guess asked). The first guess sticks.
 - Avoid hard rules in picking (never-repeat, fixed rotations): they make the next topic deducible.
   Keep the soft recency penalty, the 3x need cap and the random share.
+- Topic weight is cube root of the topic's size in the list x need (1-3) x recency. A pattern
+  with no attempts gets the full need weight, one attempt half the boost (`NOVELTY_BOOSTS`).
+  A wrong guess also counts against the pattern that was named (`MIXUP_PENALTY`), so
+  `getTopicStats` can hold an entry with `attempts: 0` and `lastAt: null`.
+- Due reviews take 8% of the picks each, up to 50%, weighted by how long they are overdue.
+  A repeat of a problem seen before gets at most 0.6 mastery credit, like a single-topic
+  attempt.
+- Solve-time targets follow the user's pace after five solves at a difficulty
+  (`getTimeTargetMs`: 1.25x the median, between the default and twice the default). The
+  background stores the target on the attempt as `targetMs`; never rescore old attempts
+  against a new target, it would reshuffle the review schedule.
 - Cleanly solved problems never come back; only weak attempts are rescheduled.
 - Help levels (`HELP_LEVELS` in `ui-helpers.js`): `none` < `hint` < `solution`. Detected help
   (`session.currentHelp`: Hint button, hint panel items, the solution tab; NeetBot is

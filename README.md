@@ -11,9 +11,10 @@ extension (MIT) to NeetCode.
   (1-10), any combination of topics and difficulties. Pro Only holds every problem that needs a
   NeetCode Pro subscription; the other lists hold free problems only.
 - With "All topics" the session is adaptive: each problem is picked when you reach it, from your
-  attempt history. Patterns you struggle with come up more often, failed problems come back after
-  1, 4 and 14 days, and a pattern that runs out of unseen problems borrows them from the next
-  larger list. A fifth of the picks stays plain random, so the next topic is never predictable.
+  attempt history. Patterns you struggle with or haven't tried come up more often, failed
+  problems come back after 1, 4 and 14 days (the more are due, the more often), and a pattern
+  that runs out of unseen problems borrows them from the next larger list. A fifth of the new
+  picks stays plain random, so the next topic is never predictable.
 - The topic is never shown up front (NeetCode's own Topics block is hidden too). After Accepted
   or Skip you name the pattern, then see what it was.
 - Each attempt records how much help you used before solving: none, a hint or the solution.
